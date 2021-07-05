@@ -6,4 +6,4 @@ Main goal of the game is the player to find the Wizard Werdna Ring. In order to 
 ## Player
 You can chose between two types of player.
 
-![Wizard_Werdna_Ring](images\Wizard_Werdna_Ring.png)
+![Wizard_Werdna_Ring](images/Wizard_Werdna_Ring.png)
