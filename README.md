@@ -89,3 +89,24 @@ Table 1: Warrior level and corresponding attributes
 Table 2: Wizard level and corresponding attributes
 
 ## **Enemies**
+The enemies of the game are created during the movement of the player and when the player  rests. The kind of the enemy depends from the player level. The enemies has a specifi visibility, hitpoints, strength and experience points which they return when they are killed. They are immovable until the player is inside their visibility, then they move towards the player trying to reduce the distance and finaly to attack the player reducing his hitpoints by the strength amount each enemy has. A table with the name the corresponding level the player must have in order the specific enemy to be created and its attributes is given below.
+
+|Player Level  |Enemy name  |Hitpoints  |Strength| Experience points|Visibiliti|Depiction|
+|:-----:|:-----------------:|:---------:|:--------:|:-----------:|:-----------:|:-------:|
+|   1-2   |  Giant Rat      |     5    |    2    |      30     |         4      | Gray Square|
+|   1-3   |  Goblin         |     15    |    5    |      50     |        7      |Yellow Circle|
+|   3-4   |  Gray Slime     |     30    |    8    |      80     |        2      |White Square|
+|   4-5   |  Orc Grunt      |     40    |    10    |     100     |       6      |Green Square|
+|   3-5   |  Orc Warlord    |     50    |    12   |      120     |       7      |Dark Green Square|
+|   4-5   |  Ettin          |     60    |    20   |      150     |       9      |Dark Grey Circle|
+|   3-5   |  Skeleton       |     20    |    30   |      100     |       4      |White Recangle|
+|     5   |  Wyrm           |     80    |    20   |      200     |       5      |Magenta Square|
+|     5   |  Vampire        |     50    |    30   |      400     |       10     |Black Circle|
+
+Table 3:Enemies of the Game
+
+The depiction of each enemy is a square, rectangle or circle with different color. In the above table is given the depiction for each enemy.
+
+![Wizard_Werdna_Ring_enemy_depiction](images/Wizard_Werdna_Ring_enemy_depiction.png)
+
+*Example of enemies depiction (a giant rat and a Golbin)*
