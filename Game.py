@@ -182,6 +182,7 @@ def run_game():
     pygame.display.set_caption("Wizard Werdna Ring")
     pygame.display.flip()
     
+    
 
     # Start the main loop for the game.
     while True:
