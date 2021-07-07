@@ -324,7 +324,7 @@ def run_game():
                 DrawMap.enemyDepiction()
                 DrawMap.drawPlayer(player.currentPositionX, player.currentPositionY)
                 pygame.display.update()
-                print("Maria is strange!!!")
+                
 
 
 run_game()
