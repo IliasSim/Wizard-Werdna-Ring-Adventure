@@ -148,9 +148,9 @@ class Wizard(AbstractPlayer):
             distance = 6
             for enemy in settings.enemies:
                 i = i + 1
-                if enemy.minDistance(self,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY) < distance and enemy.hitPoints <= hitpoints:
+                if enemy.enemyDistance(self) <= distance and enemy.hitPoints <= hitpoints:
                     index = i - 1
-                    distance = enemy.minDistance(self,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY)
+                    distance = enemy.enemyDistance(self)
                     hitpoints = enemy.hitPoints
         return index
 
