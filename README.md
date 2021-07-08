@@ -32,7 +32,7 @@ In the second screen you can insert the name of the player. Screenshot is given 
 ![Wizard_Werdna_Ring_Name](images/Wizard_Werdna_Ring_Name.png)
 
 ### **Player Depiction**
-The player is depicted as a blue rectangle.
+The player is depicted as a blue square.
 
 ![Wizard_Werdna_Ring_depiction](images/Wizard_Werdna_Ring_depiction.png)
 
