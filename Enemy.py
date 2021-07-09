@@ -32,6 +32,7 @@ class Enemy(ABC):
                 distances.append(new_distance)
         return min(distances)
 
+
     def enemyMovement(self,player):
         '''enemyMovement. Determines the movement of the enemy taking under consideration the distance between player and enemy.
         Basic aim is to reduce the distance, taking under consideration that the movement of the enemy is only on the x or y axis.'''
@@ -70,12 +71,12 @@ class Enemy(ABC):
                     y = self.enemyCurrentPossitionY+1
                     distance = new_distance_d
 
-                if new_distance_u < distance and self.enemyCurrentPossitionY - 1 > 0  and settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY - 1].ground == GameEnum.GroundType.floor and settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY - 1].occupancy == False:
+                if new_distance_u < distance and self.enemyCurrentPossitionY - 1 >= 0  and settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY - 1].ground == GameEnum.GroundType.floor and settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY - 1].occupancy == False:
                     x = self.enemyCurrentPossitionX  
                     y = self.enemyCurrentPossitionY - 1
                     distance = new_distance_u
 
-                if new_distance_l < distance and self.enemyCurrentPossitionX - 1 > 0 and settings.tiles[self.enemyCurrentPossitionX - 1][self.enemyCurrentPossitionY].ground == GameEnum.GroundType.floor and settings.tiles[self.enemyCurrentPossitionX - 1][self.enemyCurrentPossitionY].occupancy == False:
+                if new_distance_l < distance and self.enemyCurrentPossitionX - 1 >= 0 and settings.tiles[self.enemyCurrentPossitionX - 1][self.enemyCurrentPossitionY].ground == GameEnum.GroundType.floor and settings.tiles[self.enemyCurrentPossitionX - 1][self.enemyCurrentPossitionY].occupancy == False:
                     x = self.enemyCurrentPossitionX - 1 
                     y = self.enemyCurrentPossitionY
                     distance = new_distance_l
