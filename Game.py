@@ -332,6 +332,8 @@ def run_game():
                 DrawMap.enemyDepiction()
                 DrawMap.drawPlayer(player.currentPositionX, player.currentPositionY)
                 pygame.display.update()
+                        
+
                 
                 
 
