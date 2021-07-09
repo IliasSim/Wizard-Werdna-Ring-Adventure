@@ -100,7 +100,7 @@ The depiction of each enemy is a square, rectangle or circle with different colo
 
 ## **Items**
 
-In the game the tiles can have items stored on them. The two major item categories are potions and weapon.
+In the game the tiles can have items stored on them. The two major item categories are potions and weapon.There is also a special case of item theWerdna ring. Details are given below.
 
 ### **Potions**
 The potions are used for the restoration of the hitpoints and mana points of the Hero. The potion are acquired by our Hero automatically when he pass a tile in which it is stored.
@@ -131,8 +131,23 @@ The depiction of the item is with a small square at the corner of the tile they 
 
 ![Wizard_Werdna_Ring_health_potion](images/Wizard_Werdna_Ring_health_potion.png) ![Wizard_Werdna_Ring_mana_potion](images/Wizard_Werdna_Ring_mana_potion.png) ![Wizard_Werdna_Ring_weapon](images/Wizard_Werdna_Ring_weapon.png)
 
-*Health potion depiction (right), Mana potion depiction (center) weapon depiction left*
+*Health potion depiction (right), Mana potion depiction (center) weapon depiction (left)*
+#### *Werdna ring*
+This is a special case of item. Is the item for which our Hero starts his adventure. When the Hero find it, he can press p and end the game. The depiction of the ring is the same with the stairs (a yellow tile).
 
+## **Hero Status**
+The status of the hero is depicted on the left upper corner of the game screen outside the map depiction. The information that are presented are the type of the Hero, the name of the Hero, the hitponts of the hero, the mana points of the hero, the name of the weapon he posses, the strenght of the warrior or the inteligence of the wizard, the damage the Hero can induce (the Hero strength or inteligenge plus the boost from the weapon he posses), the potions the Hero posses, the Hero level and finaly the Hero current experience points.
 
+![Wizard_Werdna_Ring_hero_status](images/Wizard_Werdna_Ring_hero_status.png)
 
+*Depiction of the Hero status*
 
+## **Game Log**
+The game log is depicted at the lower left corner screen below the map screen. It prints 5 last game messages. The mesages corcen varius game aspects,like the location of the creation of an enemy regarding the Hero positin, the health/mana points restored after the usage of one potion, the weapon name and the boosts it offers e.t.c. 
+
+![Wizard_Werdna_Ring_game_log](images/Wizard_Werdna_Ring_game_log.png)
+
+*An instance of the game log*
+
+## **Summary**
+This game will be used for the development of artificial inteligence agents. The one kind of agent will playe the game from the Hero prespective and the others agents will control the enemies of the game. The project is in its initial development. Further information regardin the AI part of the game will be available as soon as possible. For the moment enjoy the game(With the less inteligent enemies).
