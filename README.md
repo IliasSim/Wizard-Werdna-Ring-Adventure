@@ -1,6 +1,34 @@
 # **Wizard Werdna Ring**
 The code is written in python and creates a rogulike game.
 
+- [**Wizard Werdna Ring**](#wizard-werdna-ring)
+  - [**Scope**](#scope)
+  - [**Caves/Enviroment**](#cavesenviroment)
+  - [**Hero**](#hero)
+    - [**Hero Depiction**](#hero-depiction)
+    - [**Hero Visiblity**](#hero-visiblity)
+    - [**Hero Actions**](#hero-actions)
+      - [**Movement of the Hero**](#movement-of-the-hero)
+      - [**Attack**](#attack)
+      - [**Rest**](#rest)
+      - [**Health potion usage**](#health-potion-usage)
+      - [**Mana potion usage**](#mana-potion-usage)
+      - [**Picking up weapons**](#picking-up-weapons)
+    - [**Hero level**](#hero-level)
+  - [**Enemies**](#enemies)
+  - [**Items**](#items)
+    - [**Potions**](#potions)
+      - [**Health Potion**](#health-potion)
+      - [**Mana Potion**](#mana-potion)
+    - [**Weapon**](#weapon)
+      - [**Sword**](#sword)
+      - [**Staff**](#staff)
+      - [**Item Depiction**](#item-depiction)
+      - [*Werdna ring*](#werdna-ring)
+  - [**Hero Status**](#hero-status)
+  - [**Game Log**](#game-log)
+  - [**Summary**](#summary)
+
 ## **Scope**
 Main goal of the game is the Hero to find the Wizard Werdna Ring. In order to achive this the Hero searche a cave complex. Each cave is inabited by hostile creatures ready to attack our Hero. The ring is located at the tenth and final cave.
 
@@ -150,4 +178,4 @@ The game log is depicted at the lower left corner screen below the map screen. I
 *An instance of the game log*
 
 ## **Summary**
-This game will be used for the development of artificial inteligence agents. The one kind of agent will playe the game from the Hero prespective and the others agents will control the enemies of the game. The project is in its initial development. Further information regardin the AI part of the game will be available as soon as possible. For the moment enjoy the game(With the less inteligent enemies).
+This game will be used for the development of artificial inteligence (AI) agents. The one kind of agent will playe the game from the Hero prespective and the others agents will control the enemies of the game. The project is in its initial development. Further information regardin the AI part of the game will be available as soon as possible. For the moment enjoy the game(With the less inteligent enemies).
