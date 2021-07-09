@@ -227,9 +227,17 @@ def run_game():
                         enemyMove()  
 
                 if event.key == pygame.K_r:
-                    player.rest()
-                    map.createEnemiesRest(player)
-                    enemyMove()
+                    if settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.visible and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.fogged:
+                        player.rest()
+                        map.createEnemiesRest(player)
+                        enemyMove()
+                    if  (abs(settings.exitx - player.currentPositionX) + abs(settings.exity - player.currentPositionY)) > 35 and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.unknown:
+                        player.rest()
+                        map.createEnemiesRest(player)
+                        enemyMove()
+                    if (abs(settings.exitx - player.currentPositionX) + abs(settings.exity - player.currentPositionY)) < 35 and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.unknown:
+                        text =player.name + " don't try to cheat."
+                        settings.addGameText(text)
 
                 if event.key == pygame.K_h:
                     if player.inventory != []:
@@ -324,6 +332,7 @@ def run_game():
                 DrawMap.enemyDepiction()
                 DrawMap.drawPlayer(player.currentPositionX, player.currentPositionY)
                 pygame.display.update()
+                
                 
 
 
