@@ -129,5 +129,12 @@ The staff boosts the maximum hitpoints and mana points a wizard can has and also
 #### **Item Depiction**
 The depiction of the item is with a small square at the corner of the tile they are stored. The potion items are depicted on the right upper corner of the tile and the color is blue for the health potion and yellow for the mana potion. The weapons are depicted on the left upper corner with one color (yellow) for both.
 
+![Wizard_Werdna_Ring_health_potion](images/Wizard_Werdna_Ring_health_potion.png) ![Wizard_Werdna_Ring_mana_potion](images/Wizard_Werdna_Ring_mana_potion.png)
+
+*Health potion depiction (right), Mana potion depiction (left)*
+
+![Wizard_Werdna_Ring_weapon](images/Wizard_Werdna_Ring_weapon.png)
+
+*Weapon depiction*
 
 
