@@ -30,7 +30,7 @@ The code is written in python and creates a rogulike game.
   - [**Summary**](#summary)
 
 ## **Scope**
-Main goal of the game is the Hero to find the Wizard Werdna Ring. In order to achive this the Hero searche a cave complex. Each cave is inabited by hostile creatures ready to attack our Hero. The ring is located at the tenth and final cave.
+Main goal of the game is the Hero to find the Wizard Werdna Ring. In order to achive this the Hero searches a cave complex. Each cave is inabited by hostile creatures ready to attack our Hero. The ring is located at the tenth and final cave.
 
 ## **Caves/Enviroment**
 The enviroment of the game consist of caves, each cave is a 2d space of tiles. The tiles can be floor (where the Heroes and the enemies can walk), wall and stairs. The stair tile is the entrance for the next cave. The color for each tile is red for the floor, black for the wall and yellow for the stair. 
@@ -58,13 +58,13 @@ The Hero can see for a diastance equal with 6 map tiles and that means that the 
 *A depiction of the game after some movements of the Hero is given above. The bright red for the tiles means that are inside the Hero's visibilty and the les opaque red means that the tiles visibility type is fogged.*
 
 ### **Hero Actions**
-The game action follows the Hero actions, in simple words first the Hero performs one action and in response the environment reacts.
+The game actions follows the Hero actions, in simple words first the Hero performs one action and in response the environment reacts.
 #### **Movement of the Hero**
 Generally the Hero can move in the four directions using the keys w to move up,a to move left,s to move down and d to move right. For each movement the Hero moves for one tile in the map/cave.
 
 #### **Attack**
 In order to attack you have to hit the space button.
-Each type of Hero perform different type of attack. The Warrior use sword and performs attack on an enemy only if he is on the next tile, if there are more tha one enemy nearby the Hero attacks the one with the less hitpoints. The wizard use staff as weapon and use spel to attack. For this reason the wizard can attack any enemy inside his visibility and if there are more than one enemy the attack priority is distance and then the enemy hitpoints. Each time the wizard attacks he consum 5 mana points.
+Each type of Hero perform different type of attack. The Warrior use sword and performs attack on an enemy only if he is on the next tile, if there are more than one enemy nearby the Hero attacks the one with the less hitpoints. The wizard use staff as weapon and use spels to attack. For this reason the wizard can attack any enemy inside his visibility and if there are more than one enemy the attack priority is distance and then the enemy hitpoints. Each time the wizard attacks he consum 5 mana points.
 The damage that the Hero performs depends on the Hero level and the weapon the Hero posses. The attribute that characterize the damage the Hero can perform is the strength for the warrior and the inteligence for the wizard.
 
 #### **Rest**
@@ -104,7 +104,7 @@ Table 1: Warrior level and corresponding attributes
 Table 2: Wizard level and corresponding attributes
 
 ## **Enemies**
-The enemies of the game are created during the movement of the Hero and when the Hero  rests. The kind of the enemy depends from the Hero level. The enemies has a specifi visibility, hitpoints, strength and experience points which they return when they are killed. They are immovable until the Hero is inside their visibility, then they move towards the Hero trying to reduce the distance and finaly to attack the Hero reducing his hitpoints by the strength amount each enemy has. A table with the name the corresponding level the Hero must have in order the specific enemy to be created and its attributes is given below.
+The enemies of the game are created during the movement of the Hero and when the Hero  rests. The kind of the enemy depends from the Hero level. The enemies has a specific visibility, hitpoints, strength and experience points which they return when they are killed. They are immovable until the Hero is inside their visibility, then they move towards the Hero trying to reduce the distance and finaly to attack the Hero reducing his hitpoints by the strength amount each enemy has. A table with the name the corresponding level the Hero must have in order the specific enemy to be created and its attributes is given below.
 
 |Hero Level  |Enemy name  |Hitpoints  |Strength| Experience points|Visibiliti|Depiction|
 |:-----:|:-----------------:|:---------:|:--------:|:-----------:|:-----------:|:-------:|
@@ -128,7 +128,7 @@ The depiction of each enemy is a square, rectangle or circle with different colo
 
 ## **Items**
 
-In the game the tiles can have items stored on them. The two major item categories are potions and weapon.There is also a special case of item theWerdna ring. Details are given below.
+In the game the tiles can have items stored on them. The two major item categories are potions and weapon.There is also a special case of item the Werdna ring. Details are given below.
 
 ### **Potions**
 The potions are used for the restoration of the hitpoints and mana points of the Hero. The potion are acquired by our Hero automatically when he pass a tile in which it is stored.
@@ -159,12 +159,12 @@ The depiction of the item is with a small square at the corner of the tile they 
 
 ![Wizard_Werdna_Ring_health_potion](images/Wizard_Werdna_Ring_health_potion.png) ![Wizard_Werdna_Ring_mana_potion](images/Wizard_Werdna_Ring_mana_potion.png) ![Wizard_Werdna_Ring_weapon](images/Wizard_Werdna_Ring_weapon.png)
 
-*Health potion depiction (right), Mana potion depiction (center) weapon depiction (left)*
+*Health potion depiction (left), Mana potion depiction (center) weapon depiction (right)*
 #### *Werdna ring*
 This is a special case of item. Is the item for which our Hero starts his adventure. When the Hero find it, he can press p and end the game. The depiction of the ring is the same with the stairs (a yellow tile).
 
 ## **Hero Status**
-The status of the hero is depicted on the left upper corner of the game screen outside the map depiction. The information that are presented are the type of the Hero, the name of the Hero, the hitponts of the hero, the mana points of the hero, the name of the weapon he posses, the strenght of the warrior or the inteligence of the wizard, the damage the Hero can induce (the Hero strength or inteligenge plus the boost from the weapon he posses), the potions the Hero posses, the Hero level and finaly the Hero current experience points.
+The status of the hero is depicted on the right upper corner of the game screen outside the map depiction. The information that are presented are the type of the Hero, the name of the Hero, the hitponts of the hero, the mana points of the hero, the name of the weapon he posses, the strenght of the warrior or the inteligence of the wizard, the damage the Hero can induce (the Hero strength or inteligenge plus the boost from the weapon he posses), the potions the Hero posses, the Hero level and finaly the Hero current experience points.
 
 ![Wizard_Werdna_Ring_hero_status](images/Wizard_Werdna_Ring_hero_status.png)
 
