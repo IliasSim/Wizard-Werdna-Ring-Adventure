@@ -49,7 +49,7 @@ def countManaPotion():
 
 def printPlayerStatus():
     '''Prints the player name and status'''
-    font = pygame.font.Font('freesansbold.ttf', 12)
+    font = pygame.font.Font(None, 20)
     if isinstance(player, Warrior):
         text = font.render('Warrior', True, (255,0,0), (0,0,0))
     if isinstance(player, Wizard):
@@ -85,7 +85,7 @@ def printPlayerStatus():
 
 def printText():
     '''Prints the game Log on the screen'''
-    font = pygame.font.Font('freesansbold.ttf', 12)
+    font = pygame.font.Font(None, 20)
     screen.fill(pygame.Color("black"))
     for i in range(len(settings.game_text)):
         text = font.render(settings.game_text[i], True, (255,0,0), (0,0,0))
@@ -105,7 +105,7 @@ def run_game():
     pygame.init()
     global screen
     screen = pygame.display.set_mode((settings.mapWidth+150, settings.mapHeigth+70))
-    font = pygame.font.Font('freesansbold.ttf', 12)
+    font = pygame.font.Font(None, 20)
     text = font.render("Please select the type of the player (Warrior or Wizard). Press 1 for Warrior or 2 for Wizard.", True, (255,0,0), (0,0,0))
     textRect = text.get_rect()
     textRect.center = ((settings.mapWidth+150)/2,(settings.mapHeigth+70)/2)
