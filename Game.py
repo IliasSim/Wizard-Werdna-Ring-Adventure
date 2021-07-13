@@ -162,9 +162,7 @@ def run_game():
                     user_text += event.unicode
         pygame.draw.rect(screen, (255,255,0), input_rect)
         text_surface = font.render(user_text, True, (255, 0, 0))
-
         screen.blit(text_surface, (input_rect.x+5, input_rect.y+5))
-      
         input_rect.w = max(100, text_surface.get_width()+10)
         pygame.display.flip()
 
