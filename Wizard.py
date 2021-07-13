@@ -159,10 +159,6 @@ class Wizard(AbstractPlayer):
                         hitpoints = enemy.hitPoints
                         index = enemies_dict.get(enemy)
             enemies_dict = {}
-        if index != None:
-            print(distance)
-        else:
-            print('No enemy')
         return index
 
     def pickItem(self):
