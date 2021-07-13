@@ -146,12 +146,23 @@ class Wizard(AbstractPlayer):
         if settings.enemies != []:
             i = 0
             distance = 6
+            enemies_dict = {}
             for enemy in settings.enemies:
                 i = i + 1
-                if enemy.enemyDistance(self) <= distance and enemy.hitPoints <= hitpoints:
+                if enemy.enemyDistance(self) <= distance :
                     index = i - 1
+                    enemies_dict.update({enemy:index})
                     distance = enemy.enemyDistance(self)
-                    hitpoints = enemy.hitPoints
+            if enemies_dict != {}:
+                for enemy in  enemies_dict.keys():
+                    if enemy.hitPoints <= hitpoints and enemy.enemyDistance(self) == distance:
+                        hitpoints = enemy.hitPoints
+                        index = enemies_dict.get(enemy)
+            enemies_dict = {}
+        if index != None:
+            print(distance)
+        else:
+            print('No enemy')
         return index
 
     def pickItem(self):
