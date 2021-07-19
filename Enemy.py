@@ -63,8 +63,8 @@ class Enemy(ABC):
                         x = self.enemyCurrentPossitionX + 1
                         y = self.enemyCurrentPossitionY
                         new_distance_r = self.minDistance(player,x,y)
-                x = 0
-                y = 0
+                x = None
+                y = None
                 
                 if new_distance_d < distance and self.enemyCurrentPossitionY + 1 < 40 and settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY+1].ground == GameEnum.GroundType.floor and settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY + 1].occupancy == False:
                     x = self.enemyCurrentPossitionX  
@@ -85,11 +85,11 @@ class Enemy(ABC):
                     x = self.enemyCurrentPossitionX + 1 
                     y = self.enemyCurrentPossitionY
                     distance = new_distance_r
-                    
-                settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY].occupancy = False
-                self.enemyCurrentPossitionX = x
-                self.enemyCurrentPossitionY = y
-                settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY].occupancy = True
+                if x != None and y != None:
+                    settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY].occupancy = False
+                    self.enemyCurrentPossitionX = x
+                    self.enemyCurrentPossitionY = y
+                    settings.tiles[self.enemyCurrentPossitionX][self.enemyCurrentPossitionY].occupancy = True
 
                 
 
