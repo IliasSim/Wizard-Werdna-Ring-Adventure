@@ -37,7 +37,7 @@ def countHealthPotion():
             if isinstance(item, HelthPotion):
                 count = count + 1
     return count
-
+ 
 def countManaPotion():
     '''Counts the health potions player posses.'''
     count = 0
