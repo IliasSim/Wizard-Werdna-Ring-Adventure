@@ -87,3 +87,7 @@ class GameMapGraphics():
                         pygame.draw.rect(self.screen, self.green, [x*12,y*12,3,3])
                     if isinstance(settings.tiles[x][y].store,Werdna_Ring):
                         pygame.draw.rect(self.screen, self.green, [x*12,y*12,11,11])
+
+    def arrayreturn(self):
+        array = pygame.surfarray.array3d(self.screen)
+        return array
