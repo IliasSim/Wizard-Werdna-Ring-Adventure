@@ -10,6 +10,7 @@ from Enemy import Enemy
 import GameEnum
 import random
 
+
 def gameOver():
     '''Checks if the player is dead.'''
     if player.hitPoints <= 0:
@@ -183,7 +184,8 @@ def run_game():
     
 
     # Start the main loop for the game.
-    while True:
+    gameContinues = True
+    while gameContinues:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -254,21 +256,21 @@ def run_game():
                     enemyMove()
 
                 if event.key == pygame.K_m:
+                    index = None
                     if isinstance(player, Wizard) and player.inventory != []:
-                            index = None
-                            
                             for i in range(len(player.inventory)):
                                 if isinstance(player.inventory[i],ManaPotion):
                                     index = i
                             if index != None:
                                 item = player.inventory.pop(index)
                                 player.use(item)
+                            if index == None:
+                                text =player.name + " doesn't posses mana potion."
+                                settings.addGameText(text)
                     if isinstance(player, Warrior):
                         text =player.name + " can't uses mana potion."
                         settings.addGameText(text)
-                    if index == None:
-                        text =player.name + " doesn't posses mana potion."
-                        settings.addGameText(text)
+                        
                     enemyMove()
                 
                 if event.key == pygame.K_SPACE:
@@ -322,7 +324,6 @@ def run_game():
                 else:
                     pass
 
-                
                 printText()
                 printPlayerStatus()
                 DrawMap.drawMap()
@@ -330,10 +331,7 @@ def run_game():
                 DrawMap.enemyDepiction()
                 DrawMap.drawPlayer(player.currentPositionX, player.currentPositionY)
                 pygame.display.update()
-                        
-
-                
-                
-
-
+                    
 run_game()
+print("ilias")
+
