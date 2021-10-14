@@ -98,7 +98,7 @@ class AbstractPlayer(ABC):
                     self.currentPositionX = self.currentPositionX - 1
 
         if move == GameEnum.MovementType.right:
-            if self.currentPositionX + 1 > 79:
+            if self.currentPositionX + 1 > settings.xtile - 1:
                 return
             if settings.tiles[self.currentPositionX + 1][self.currentPositionY].ground == GameEnum.GroundType.floor or settings.tiles[self.currentPositionX + 1][self.currentPositionY].ground == GameEnum.GroundType.stairs:
                 if settings.tiles [self.currentPositionX + 1] [self.currentPositionY].occupancy != True:
@@ -116,7 +116,7 @@ class AbstractPlayer(ABC):
                     self.currentPositionY = self.currentPositionY - 1
 
         if move == GameEnum.MovementType.down:
-            if self.currentPositionY + 1 > 39:
+            if self.currentPositionY + 1 > settings.ytile -1:
                 return
             if settings.tiles[self.currentPositionX][self.currentPositionY + 1].ground == GameEnum.GroundType.floor or settings.tiles[self.currentPositionX][self.currentPositionY + 1].ground == GameEnum.GroundType.stairs:
                 if settings.tiles [self.currentPositionX] [self.currentPositionY + 1].occupancy != True:
