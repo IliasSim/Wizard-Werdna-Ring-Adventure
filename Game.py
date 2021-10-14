@@ -7,14 +7,16 @@ from Games_items import HelthPotion,ManaPotion,Staff,Sword,Werdna_Ring
 from Warrior import Warrior
 from Wizard import Wizard
 from Enemy import Enemy
+from Tile import Tile
 import GameEnum
 import random
-
 
 def gameOver():
     '''Checks if the player is dead.'''
     if player.hitPoints <= 0:
+        #settings.reward -= 1000
         print(player.name,'is dead. Game Over')
+        pygame.quit()
         sys.exit()
 
 def makeMap(cave):
@@ -96,11 +98,25 @@ def enemyMove():
     '''Determines the movement of the enemy after the movement of the player.'''
     if settings.enemies != []:
             for enemy in settings.enemies:
+                #if enemy.minDistance(player,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY) == 0:
+                    #settings.reward -= 10
                 enemy.enemyMovement(player)
     gameOver()
 
-def run_game():
+def run_game(xPixel,yPixel,screenFactor):
     '''Initialize game and create a screen object.'''
+    xPixel = xPixel
+    yPixel = yPixel
+    screenFactor = screenFactor
+    settings.screenFactor = screenFactor
+    settings.mapWidth = int(xPixel/3)*screenFactor
+    settings.mapHeigth = int(yPixel/3)*screenFactor
+    settings.xtile = int(settings.mapWidth/(4*screenFactor))
+    settings.ytile = int(settings.mapHeigth/(4*screenFactor))
+    settings.tiles = [[0]*settings.ytile for i in range(settings.xtile)]
+    for y in range(settings.ytile):
+        for x in range(settings.xtile):
+            settings.tiles[x][y] = Tile(x,y)
     global map 
     map = GameMap()
     pygame.init()
@@ -130,8 +146,6 @@ def run_game():
                 if event.key == pygame.K_2:
                     player = Wizard()
                     writeText = False   
-                else :
-                    pass
 
     text = font.render("Please enter the name of the player and press enter: ", True, (255,0,0), (0,0,0))
     textRect = text.get_rect()
@@ -186,59 +200,96 @@ def run_game():
     # Start the main loop for the game.
     gameContinues = True
     while gameContinues:
-
+        settings.reward = 0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 Xposition = player.currentPositionX
                 Yposition = player.currentPositionY
+                inventory = len(player.inventory)
+                unknownTille = map.countUknownTile()
                 if event.key == pygame.K_a:
                     player.playerMovement(GameEnum.MovementType.left)
-                    if Xposition == player.currentPositionX and Yposition == player.currentPositionY:
-                        pass
-                    else :
+                    if Xposition != player.currentPositionX or Yposition != player.currentPositionY:    
+                        if unknownTille > map.countUknownTile():
+                            settings.reward += 10
+                        else:
+                            settings.reward -= 1
+                        if len(player.inventory) > inventory:
+                            settings.reward += 100
                         map.createEnemies(player, GameEnum.MovementType.left)
-                        enemyMove()  
+                        enemyMove()
+                    else:
+                        settings.reward -= 1  
                     
                     
                 if event.key == pygame.K_w:
                     player.playerMovement(GameEnum.MovementType.up)
-                    if Xposition == player.currentPositionX and Yposition == player.currentPositionY:
-                        pass
-                    else :
+                    if Xposition != player.currentPositionX or Yposition != player.currentPositionY:
+                        if unknownTille > map.countUknownTile():
+                            settings.reward += 10
+                        else:
+                            settings.reward -= 1
+                        if len(player.inventory) > inventory:
+                            settings.reward += 100
                         map.createEnemies(player, GameEnum.MovementType.up)
                         enemyMove()
-
+                    else:
+                        settings.reward -= 1
                 if event.key == pygame.K_d:
                     player.playerMovement(GameEnum.MovementType.right)
-                    if Xposition == player.currentPositionX and Yposition == player.currentPositionY:
-                        pass
-                    else :
+                    if Xposition != player.currentPositionX or Yposition != player.currentPositionY:
+                        if unknownTille > map.countUknownTile():
+                            settings.reward += 10
+                        else:
+                            settings.reward -= 1
+                        if len(player.inventory) > inventory:
+                            settings.reward += 100
                         map.createEnemies(player, GameEnum.MovementType.right)
                         enemyMove()  
-
+                    else:
+                        settings.reward -= 1
                 if event.key == pygame.K_s:
                     player.playerMovement(GameEnum.MovementType.down)
-                    if Xposition == player.currentPositionX and Yposition == player.currentPositionY:
-                        pass
-                    else :
+                    if Xposition != player.currentPositionX or Yposition != player.currentPositionY:
+                        if unknownTille > map.countUknownTile():
+                            settings.reward += 10
+                        else:
+                            settings.reward -= 1
+                        if len(player.inventory) > inventory:
+                            settings.reward += 100
                         map.createEnemies(player, GameEnum.MovementType.down)
                         enemyMove()  
-
+                    else:
+                        settings.reward -= 1
                 if event.key == pygame.K_r:
                     if settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.visible and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.fogged:
+                        oldhitpoints = player.hitPoints
+                        if isinstance(player, Wizard):
+                            oldmanapoints = player.manaPoints
                         player.rest()
                         map.createEnemiesRest(player)
                         enemyMove()
                     if  (abs(settings.exitx - player.currentPositionX) + abs(settings.exity - player.currentPositionY)) > 35 and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.unknown:
+                        oldhitpoints = player.hitPoints
+                        if isinstance(player, Wizard):
+                            oldmanapoints = player.manaPoints
                         player.rest()
                         map.createEnemiesRest(player)
                         enemyMove()
                     if (abs(settings.exitx - player.currentPositionX) + abs(settings.exity - player.currentPositionY)) < 35 and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.unknown:
                         text =player.name + " don't try to cheat."
                         settings.addGameText(text)
-
+                    if (player.hitPoints - oldhitpoints) == 4 and countHealthPotion() == 0:
+                        settings.reward += 5
+                    if (player.hitPoints - oldhitpoints) < 4 or countHealthPotion() == 0:
+                        settings.reward -= 1
+                    if isinstance(player, Wizard):
+                        if (player.manaPoints - oldmanapoints) == 4 and countManaPotion() == 0:
+                            settings.reward += 5
+                        if (player.manaPoints - oldmanapoints) < 4 or countManaPotion() == 0:
+                            settings.reward -= 1
                 if event.key == pygame.K_h:
                     if player.inventory != []:
                         index = None
@@ -248,36 +299,55 @@ def run_game():
                                 
                         if index != None:
                             item = player.inventory.pop(index)
+                            oldhitpoints = player.hitPoints
                             player.use(item)
-                            
+                        if (player.hitPoints - oldhitpoints) == 20:
+                            settings.reward += 5
+                        if (player.hitPoints - oldhitpoints) < 20:
+                            settings.reward -= 1  
                     else :
                         text =player.name + " doesn't posses health potion."
                         settings.addGameText(text)
+                        settings.reward -= 1
+                    
                     enemyMove()
 
                 if event.key == pygame.K_m:
-                    index = None
+                    if isinstance(player, Warrior):
+                        text =player.name + " can't uses mana potion."
+                        settings.reward -= 30
+                        settings.addGameText(text)
                     if isinstance(player, Wizard) and player.inventory != []:
+                            index = None
                             for i in range(len(player.inventory)):
                                 if isinstance(player.inventory[i],ManaPotion):
                                     index = i
                             if index != None:
                                 item = player.inventory.pop(index)
+                                oldmanapoints = player.manaPoints
                                 player.use(item)
-                            if index == None:
+                                if (player.manaPoints - oldmanapoints) == 20:
+                                    settings.reward += 5
+                                if  (player.manaPoints - oldmanapoints) < 20:
+                                    settings.reward -= 1
+                            else:
                                 text =player.name + " doesn't posses mana potion."
                                 settings.addGameText(text)
-                    if isinstance(player, Warrior):
-                        text =player.name + " can't uses mana potion."
-                        settings.addGameText(text)
-                        
+                    settings.reward -= 1
                     enemyMove()
                 
                 if event.key == pygame.K_SPACE:
                     index = player.enemyToAttack()
+                    if index == None:
+                        settings.reward -= 1
                     if index != None:
                         enemy = settings.enemies[index]
-                        if player.attack(enemy) and enemy.hitPoints <= 0 and player.experiencePoints <= 13999:
+                        boolean = player.attack(enemy)
+                        if boolean:
+                            settings.reward += 10
+                        if boolean and enemy.hitPoints <= 0:
+                            settings.reward += 20 
+                        if boolean and enemy.hitPoints <= 0 and player.experiencePoints <= 13999:
                             settings.tiles[enemy.enemyCurrentPossitionX][enemy.enemyCurrentPossitionY].occupancy = False
                             settings.enemies.pop(index)
                             text =player.name + " kills " + enemy.name + " and earn " + str(enemy.XPreturn) + " XP points"
@@ -301,29 +371,39 @@ def run_game():
 
                 if event.key == pygame.K_p:
                     if settings.tiles[player.currentPositionX][player.currentPositionY].store != None:
+                        weaponPicked = False
                         if isinstance(player, Warrior) and isinstance(settings.tiles[player.currentPositionX][player.currentPositionY].store, Sword):
                             sword = settings.tiles[player.currentPositionX][player.currentPositionY].store
                             settings.tiles[player.currentPositionX][player.currentPositionY].store = player.dropWeapon()
+                            settings.reward += 50
+                            weaponPicked = True
                             player.setWeapon(sword)
                         if isinstance(player, Wizard) and isinstance(settings.tiles[player.currentPositionX][player.currentPositionY].store, Staff):
                             staff = settings.tiles[player.currentPositionX][player.currentPositionY].store
                             settings.tiles[player.currentPositionX][player.currentPositionY].store = player.dropWeapon()
+                            settings.reward += 50
+                            weaponPicked = True
                             player.setWeapon(staff)
                         if isinstance(settings.tiles[player.currentPositionX][player.currentPositionY].store, Werdna_Ring):
                             print(player.name + " found Werdna's Ring!! Congratulation")
+                            settings.reward += 10000
                             sys.exit()
+                        if not weaponPicked:
+                            print("I work")
+                            settings.reward -=1
+                    else:
+                        settings.reward -= 1
                     enemyMove()
                
                                 
                 if settings.tiles[player.currentPositionX][player.currentPositionY].ground == GameEnum.GroundType.stairs:
+                    settings.reward += 1000
                     cave = cave + 1
                     makeMap(cave)
                     settings.enemies = []
                     text =player.name + " enters cave No " + str(cave + 1)
                     settings.addGameText(text)
-                else:
-                    pass
-
+                
                 printText()
                 printPlayerStatus()
                 DrawMap.drawMap()
@@ -332,6 +412,5 @@ def run_game():
                 DrawMap.drawPlayer(player.currentPositionX, player.currentPositionY)
                 pygame.display.update()
                     
-run_game()
-print("ilias")
+run_game(960,480,3)
 
