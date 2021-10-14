@@ -1,7 +1,7 @@
 import GameEnum
 
 class HelthPotion():
-
+    '''This class cretes an ithm for the game that can be consumed and adds 20 hp to the player hitpoint'''
     def __init__(self):
         self.eq = False
         self.use = 1
@@ -9,7 +9,7 @@ class HelthPotion():
         self.hp_add = 20
 
 class ManaPotion():
-
+    '''This class cretaes an item that can be used by the Wizard type of player and adds 20 manapoints to the player MP.'''
     def __init__(self):
         self.eq = False
         self.use = 1
