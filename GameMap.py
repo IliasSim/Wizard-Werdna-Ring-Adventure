@@ -9,7 +9,8 @@ from Enemy import Enemy
 
 class GameMap():
     '''The GameMap class create the game map. Also it creates the enemies and the items to be placed on the map.'''
-
+    #def __init__(self,seed):
+        #random.seed(seed)
     def refreshTilesSettings(self):
         '''Reset the values of the tiles to their initial price.'''
         for y in range(settings.ytile):
@@ -18,12 +19,19 @@ class GameMap():
                 settings.tiles[x][y].store = None
                 settings.tiles[x][y].occupancy = False
                 settings.tiles[x][y].visibility = GameEnum.VisibilityType.unknown
-
+    
+    def countUknownTile(self):
+        uknownTile = 0
+        for y in range(settings.ytile):
+            for x in range(settings.xtile):
+                if settings.tiles[x][y].visibility == GameEnum.VisibilityType.unknown and  settings.tiles[x][y].ground == GameEnum.GroundType.floor:
+                    uknownTile += 1
+        return uknownTile
     
     def MakeMAp(self,precentage,player,caveNo):
         '''Characterizes the tile of the map as floor or wall and sets the initial visibility to unknown, except for the region the player'''
-        settings.startX = random.randint(0, 79)
-        settings.startY = random.randint(0, 39)
+        settings.startX = random.randint(0, settings.xtile - 1)
+        settings.startY = random.randint(0, settings.ytile -1)
         m = settings.startX
         n = settings.startY
         player.currentPositionX = m
