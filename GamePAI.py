@@ -12,11 +12,14 @@ import random
 from Tile import Tile
 import numpy as np
 import gc
+import numpy as np
+import tensorflow as tf
 eps = np.finfo(np.float32).eps.item()
 
 class GamePAI():
     '''GamePAi is a class that creates an instance of the game and initialize the basic features of the game.'''
-    def __init__(self,playerType,playerName,xPixel,yPixel,screenFactor,depict,game):
+    def __init__(self,playerType,playerName,xPixel,yPixel,screenFactor,depict,game,playHP):
+        self.playHP = playHP
         self.xPixel = xPixel
         self.yPixel = yPixel
         self.screenFactor = screenFactor
@@ -33,54 +36,130 @@ class GamePAI():
         self.steps = 0
         self.reward = 0
         #random.seed(seed)
+        #if self.screenFactor == 3:
         if depict == True:
             self.screen = pygame.display.set_mode((settings.mapWidth+150, settings.mapHeigth+70))
         if depict == False:
             self.screen = pygame.Surface((settings.mapWidth+150, settings.mapHeigth+70))
+        #if self.screenFactor == 1:
+            #if depict == True:
+                #self.screen = pygame.display.set_mode((settings.mapWidth+32, settings.mapHeigth+24))
+            #if depict == False:
+                #self.screen = pygame.Surface((settings.mapWidth+32, settings.mapHeigth+24))
         self.DrawMap = GameMapGraphics(self.screen)
         self.map = GameMap()
+        pygame.init()         
         self.cave = 0
         self.playerType = playerType
         self.playerName = playerName
         self.total_reward = []
-        settings.enemies = []
-        settings.game_text = []
-        pygame.init()
-        if playerType == 1:
-            self.player = Warrior()
-        if playerType == 2:
-            self.player = Wizard()
-        self.player.name = playerName          
-        text = 'Welcome to the Wizard Werdna Ring adventure. Try to find the ring and win the Game.'
+        if not self.playHP:
+            settings.enemies = []
+            settings.game_text = []
+            if playerType == 1:
+                self.player = Warrior()
+            if playerType == 2:
+                self.player = Wizard()
+            self.player.name = playerName
+        if self.playHP:
+            font = pygame.font.Font('freesansbold.ttf', 12)
+            text = font.render("Please select the type of the player (Warrior or Wizard). Press 1 for Warrior or 2 for Wizard.", True, (255,0,0), (0,0,0))
+            textRect = text.get_rect()
+            textRect.center = ((settings.mapWidth+150)/2,(settings.mapHeigth+70)/2)
+            self.screen.blit(text, textRect)
+            pygame.display.set_caption("Wizard Werdna Ring")
+            pygame.display.flip()
+            writeText = True
+            while writeText:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN:
+            
+                        if event.key == pygame.K_1:
+                            self.player = Warrior()
+                            writeText = False
+                        if event.key == pygame.K_2:
+                            self.player = Wizard()
+                            writeText = False   
+
+            text = font.render("Please enter the name of the player and press enter: ", True, (255,0,0), (0,0,0))
+            textRect = text.get_rect()
+            input_rect = pygame.Rect((settings.mapWidth+150)/2-100, (settings.mapHeigth+70)/2 + 20, 200, 20)
+            textRect.center = ((settings.mapWidth+150)/2,(settings.mapHeigth+70)/2)
+            self.screen.fill(pygame.Color("black"))
+            user_text = ''
+            self.screen.blit(text, textRect)
+            pygame.display.set_caption("Wizard Werdna Ring")
+            pygame.display.flip()
+            writeText = True
+            while writeText:
+                nameinput = True
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_RETURN:
+                            while nameinput:
+                                self.player.name = user_text
+                                nameinput = False
+                                writeText = False           
+
+                        if event.key == pygame.K_BACKSPACE:
+                            user_text = user_text[:-1]
+  
+                        if event.key != pygame.K_BACKSPACE and event.key != pygame.K_RETURN:
+                            user_text += event.unicode
+                pygame.draw.rect(self.screen, (255,255,0), input_rect)
+                text_surface = font.render(user_text, True, (255, 0, 0))
+                self.screen.blit(text_surface, (input_rect.x+5, input_rect.y+5))
+                input_rect.w = max(100, text_surface.get_width()+10)
+                pygame.display.flip()
+        text = self.player.name + ' welcome to the Wizard Werdna Ring adventure. Try to find the ring and win the Game.'
         settings.addGameText(text)
         self.printText()
         self.makeMap(self.cave)
         self.printPlayerStatus()
         if depict == True:
-            pygame.display.set_caption("Wizard Werdna Ring "+str(game+1))
-            pygame.display.flip()
+            if self.screenFactor == 1:
+                pygame.display.set_caption(str(game+1))
+                pygame.display.flip()
+            else:
+                pygame.display.set_caption("Wizard Werdna Ring "+str(game+1))
+                pygame.display.flip()
+        if playHP:
+            self.run_gameHP()
 
     def afterMoveDepiction(self):
         '''This function refreshes the information on the game screen'''
         self.printText()
         self.printPlayerStatus()
         self.drawMap() 
-        
+
+    def gameOverHP(self):
+        '''Checks if the player is dead and reinitilize the game creating a new instance of the GamePAI class.'''
+        if self.player.hitPoints <= 0:
+            print(self.player.name,'is dead. Game Over ' + str(settings.gameCount) + ' episode rewards ' + str(self.reward))
+            pygame.quit()
+            sys.exit()
+            
 
     def gameOver(self,s):
         '''Checks if the player is dead and reinitilize the game creating a new instance of the GamePAI class.'''
         self.done = False
         if self.player.hitPoints <= 0:
             self.done = True
-            #self.reward -= 1000
+            #self.reward -= 10
             settings.gameCount = settings.gameCount + 1
             #print(self.player.name,'is dead. Game Over ' + str(settings.gameCount) + ' episode rewards ' + str(self.reward))
             pygame.quit()
             #sys.exit()
             if s % 100 == 0:
-                self.__init__(self.playerType,self.playerName,self.xPixel,self.yPixel,self.screenFactor,True,s)
+                self.__init__(self.playerType,self.playerName,self.xPixel,self.yPixel,self.screenFactor,True,s,False)
             else:
-                self.__init__(self.playerType,self.playerName,self.xPixel,self.yPixel,self.screenFactor,True,s)
+                self.__init__(self.playerType,self.playerName,self.xPixel,self.yPixel,self.screenFactor,True,s,False)
             gc.collect()
         return self.done
 
@@ -91,7 +170,7 @@ class GamePAI():
         self.DrawMap.enemyDepiction()
         self.DrawMap.drawPlayer(self.player.currentPositionX, self.player.currentPositionY)
         #FramePerSec = pygame.time.Clock()
-        #FramePerSec.tick(20)
+        #FramePerSec.tick(5)
         if self.depict == True:
             pygame.display.update()
 
@@ -162,6 +241,7 @@ class GamePAI():
         self.screen.blit(text7, (settings.mapWidth,112))
         self.screen.blit(text8, (settings.mapWidth,125))
 
+
     def printText(self):
         '''Prints the game Log on the screen'''
         font = pygame.font.Font('freesansbold.ttf', 12)
@@ -175,9 +255,10 @@ class GamePAI():
         if settings.enemies != []:
             for enemy in settings.enemies:
                 #if enemy.minDistance(self.player,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY) == 0:
-                    #self.reward -= 10
+                    #self.reward -= 0
                 enemy.enemyMovement(self.player)
-        #self.gameOver()
+        if self.playHP:
+            self.gameOverHP()
 
 
 
@@ -205,13 +286,19 @@ class GamePAI():
                 else:
                     self.reward -= 0
                 if len(self.player.inventory) > inventory:
-                    self.reward += 10
+                    self.reward += 1000
                 self.map.createEnemies(self.player,movementType)
                 self.enemyMove()
                 self.enterCave(self.cave)
                 self.afterMoveDepiction()
-            else:
-                self.reward -= 3       
+                if settings.tiles[settings.exitx][settings.exity].visibility == GameEnum.VisibilityType.visible:
+                    #print("I work")
+                    self.reward += 200
+            if Xposition == self.player.currentPositionX and Yposition == self.player.currentPositionY:
+                #print('I work')
+                self.reward -= 10
+                self.enemyMove()  
+                self.afterMoveDepiction()   
         if action == 4:
         #This code chunk adds 4 points to the hp of the player and if the player is wizzard type, adds and 4 point the mp of the player.'''
             oldhitpoints = self.player.hitPoints
@@ -232,12 +319,12 @@ class GamePAI():
                 settings.addGameText(text)
                 self.afterMoveDepiction()
             if (self.player.hitPoints - oldhitpoints) == 4 and self.countHealthPotion() == 0:
-                self.reward += 1
+                self.reward += 10
             if (self.player.hitPoints - oldhitpoints) < 4 or self.countHealthPotion() == 0:
-                self.reward -= 3
+                self.reward -= 1
             if isinstance(self.player, Wizard):
                 if  (self.player.manaPoints - oldmanapoints) == 4 and self.countManaPotion() == 0:
-                    self.reward += 1
+                    self.reward += 10
                 if  (self.player.manaPoints - oldmanapoints) < 4 or self.countManaPotion() == 0:
                     self.reward -= 1
 
@@ -253,7 +340,7 @@ class GamePAI():
                     oldhitpoints = self.player.hitPoints
                     self.player.use(item)           
                 if (self.player.hitPoints - oldhitpoints) == 20:
-                    self.reward += 1
+                    self.reward += 10
                 if (self.player.hitPoints - oldhitpoints) < 20:
                     self.reward -= 1
             else :
@@ -268,7 +355,7 @@ class GamePAI():
             if isinstance(self.player, Warrior):
                     text =self.player.name + " can't uses mana potion."
                     settings.addGameText(text)
-                    self.reward -= 30
+                    self.reward -= 1
 
             if isinstance(self.player, Wizard) and self.player.inventory != []:
                 index = None          
@@ -280,7 +367,7 @@ class GamePAI():
                     oldmanapoints = self.player.manaPoints
                     self.player.use(item)
                 if  (self.player.manaPoints - oldmanapoints) == 20:
-                    self.reward += 1
+                    self.reward += 10
                 if  (self.player.manaPoints - oldmanapoints) < 20:
                     self.reward -= 1
                 if index == None:
@@ -295,14 +382,16 @@ class GamePAI():
         #This code chunk performs the attack of the player.
             index = self.player.enemyToAttack()
             if index == None:
-                self.reward -= 5
+                self.reward -= 1
             if index != None:
                 enemy = settings.enemies[index]
                 boolean = self.player.attack(enemy)
                 if boolean:
-                    self.reward += 0
+                    self.reward += 100
                 if boolean and enemy.hitPoints <= 0:
-                    self.reward += 10
+                    self.reward += 1000
+                    if random.random() <= 0.25:
+                        self.map.addItem(self.player, enemy.enemyCurrentPossitionX, enemy.enemyCurrentPossitionY)
                 if boolean and enemy.hitPoints <= 0 and self.player.experiencePoints <= 13999:
                     settings.tiles[enemy.enemyCurrentPossitionX][enemy.enemyCurrentPossitionY].occupancy = False
                     settings.enemies.pop(index)
@@ -320,8 +409,6 @@ class GamePAI():
                             if index != None:
                                 item = self.player.inventory.pop(index)
                                 self.player.use(item)
-                if random.random() <= 0.25:
-                    self.map.addItem(self.player, enemy.enemyCurrentPossitionX, enemy.enemyCurrentPossitionY)
             self.enemyMove()
             self.afterMoveDepiction()
 
@@ -334,17 +421,17 @@ class GamePAI():
                     settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store = self.player.dropWeapon()
                     weaponPicked = True
                     self.player.setWeapon(sword)
-                    self.reward += 1
+                    self.reward += 1000
                 if isinstance(self.player, Wizard) and isinstance(settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store, Staff):
                     staff = settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store
                     settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store = self.player.dropWeapon()
                     weaponPicked = True
                     self.player.setWeapon(staff)
-                    self.reward += 1
+                    self.reward += 1000
                 if not weaponPicked:
                     self.reward -= 1
             else:
-                self.reward -= 1 
+                self.reward -= 1
             self.enemyMove()
             self.afterMoveDepiction()
         #if self.player.hitPoints <= 0:
@@ -355,9 +442,52 @@ class GamePAI():
         state = state[:settings.mapHeigth,:settings.mapWidth]
         state = state/255
         state =  np.expand_dims(state, axis=0)
-        std_reward = self.standardize_reward(self.reward)
-        #print(state.shape)
-        return state, self.reward
+        #std_reward = self.standardize_reward(self.reward)
+        manapoints = 0
+        maxmanapoints = 0
+        manapotion = 0
+        inteligence = 0
+        if isinstance(self.player,Warrior):
+            base_int_str = self.player.baseStrength
+        if isinstance(self.player, Wizard):
+            manapoints = self.player.manaPoints
+            maxmanapoints = self.player.maxManaPoints
+            manapotion = self.countManaPotion
+            base_int_str = self.player.baseIntelligence
+        playerstatus = np.array([self.player.hitPoints,self.player.maxHitPoints,base_int_str,inteligence,manapoints,maxmanapoints,manapotion,self.countHealthPotion(),self.player.getAttackDamage(),self.player.getLevel()],dtype=np.int32)
+        textList = []
+        for text in settings.game_text:
+            textNname = text[len(self.player.name):]
+            textList.append(textNname)        
+        playerstatus = np.expand_dims(playerstatus, axis=0)
+        textArray = self.gameVocab(textList)
+        #reward = self.standardize_reward(self.reward)
+        return state, self.reward, playerstatus, textArray
+
+    def gameVocab(self,textList):
+        sum_text = 0
+        game_vocab = {'welcome':100,'to':1,'the':2,'Wizard':3,'Werdna':4,'Ring':5,'adventure.':6,
+        'Try':7,'to':8,'find':9,'Ring':10,'and':11,'win':12,'Game.':13,"don't":14,'try':15,'cheat.':16,
+        "doesn't":17,'posses':18,'health':19,'potion.':20,"can't":21,'uses':22,'mana':22,'kills':23,'earn':24,
+        'XP':25,'points':26,'enters':27,'cave':28,'No':29,'can':30,'hear':31,'from':32,'east':33,
+        'west':34,'north':35,'south':36,'attacked':37,'by':38,'for':39,'damage.':40,'a':41,'an':42,
+        'Giant':43,'Rat':44,'Goblin':45,'Slime':46,'Orc':47,'Grunt':48,'Warlord':49,'Skeleton':50,
+        'Vampire':51,'Wyrm':52,'changes':53,'level.':54,'New':55,'level':56,'is':57,'HP.':58,'potion':59,
+        'MP.':60,'found':61,'press':63,'use':64,'it.':65,'h':66,'m':67,'weapon':68,'type':69,'of':70,
+        'p':71,'equip':72,'with':73,'add':74,'which':75,'add':76,'max':77,'HP':78,'MP':79,'player':80,'inteligence':81,
+        'earn':82,'attack':83,'strength':84,'east.':85,'west.':86,'north.':87,'south.':89,'ring':90,'Mana':91,'this':92,'Gray':93,
+        'Amazing':94,'Deadly':95,'Ancient':96,'Sword':97,'Staff':98,'weapon.':99,'rest':101}
+        text = textList[len(textList)-1]
+        text = text.split()
+        for word in text:
+            if word in game_vocab:
+                sum_text += game_vocab[word]
+            else:
+                sum_text += int(word)
+        array_text = np.array(sum_text,dtype=np.int32)
+        array_text = np.reshape(array_text,(1,1))
+        #print(array_text,array_text.shape)
+        return array_text
 
     def enterCave(self,cave):
         '''This function Checks if the tile is stair or the tile stores the Werdna Ring. 
@@ -368,11 +498,11 @@ class GamePAI():
             settings.enemies = []
             text =self.player.name + " enters cave No " + str(cave + 1)
             settings.addGameText(text)
-            self.reward += 100
+            self.reward += 10000
         if isinstance(settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store, Werdna_Ring):
             print(self.player.name + " found Werdna's Ring!! Congratulation")
             pygame.quit()
-            self.reward += 1000
+            self.reward += 10000
             #sys.exit()
                     
     def settingmapWidth(self):
@@ -385,6 +515,7 @@ class GamePAI():
         return settings.mapHeigth
 
     def standardize_reward(self,reward):
+        '''This function is used for the standardization of the reward.'''
         self.total_reward.append(reward)
         #mean_reward = self.total_reward/episode
         #print(mean_reward)
@@ -392,5 +523,67 @@ class GamePAI():
         reward_std = ((reward - np.mean(self.total_reward)) / (np.std(self.total_reward) + eps))
         return reward_std
 
+    def run_gameHP(self):
+        '''Thru this function the player can play the game with the keyboard'''
+        self.drawMap()
+        gameContinues = True
+        while gameContinues:
+            settings.reward = 0
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_a:
+                        self.playerAction(3)
+                    if event.key == pygame.K_s:
+                        self.playerAction(2)
+                    if event.key == pygame.K_d:
+                        self.playerAction(1)
+                    if event.key == pygame.K_w:
+                        self.playerAction(0)
+                    if event.key == pygame.K_r:
+                        self.playerAction(4)
+                    if event.key == pygame.K_h:
+                        self.playerAction(5)
+                    if event.key == pygame.K_m:
+                        self.playerAction(6)
+                    if event.key == pygame.K_SPACE:
+                        self.playerAction(7)
+                    if event.key == pygame.K_p:
+                        self.playerAction(8)
+    
+    def initialGameState(self):
+        '''Returns the intial state of the game'''
+        screen = self.screen
+        state = pygame.surfarray.array3d(screen)
+        state = state.swapaxes(0,1)
+        state = state[:settings.mapHeigth,:settings.mapWidth]
+        state = state/255
+        state =  np.expand_dims(state, axis=0)
+        #std_reward = self.standardize_reward(self.reward)
+        manapoints = 0
+        maxmanapoints = 0
+        manapotion = 0
+        inteligence = 0
+        if isinstance(self.player,Warrior):
+            base_int_str = self.player.baseStrength
+        if isinstance(self.player, Wizard):
+            manapoints = self.player.manaPoints
+            maxmanapoints = self.player.maxManaPoints
+            manapotion = self.countManaPotion
+            base_int_str = self.player.baseIntelligence
+        playerstatus = np.array([self.player.hitPoints,self.player.maxHitPoints,base_int_str,inteligence,manapoints,maxmanapoints,manapotion,self.countHealthPotion(),self.player.getAttackDamage(),self.player.getLevel()])
+        playerstatus = np.expand_dims(playerstatus, axis=0)
+        textList = []
+        for text in settings.game_text:
+            textNname = text[len(self.player.name):]
+            textList.append(textNname)
+        textArray = self.gameVocab(textList)
+        #textArray = np.expand_dims(textArray, axis=0)
+        return state, playerstatus, textArray
 
 
+
+
+#game = GamePAI(2,'Merlin',960,480,3,True,0,True)
