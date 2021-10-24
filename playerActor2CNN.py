@@ -57,7 +57,7 @@ class agent():
     
     def act(self,state):
         prob = self.actor(state)
-        #print(prob)
+        print(prob)
         prob = prob.numpy()
         dist = tfp.distributions.Categorical(probs=prob, dtype=tf.float32)
         action = dist.sample()
@@ -102,7 +102,7 @@ steps = 1000
 total_reward = 0
 start_time = time. time()
 dfrewards = []
-game = GamePAI(1,'Connan',252,252,1,True,0)
+game = GamePAI(1,'Connan',444,444,1,True,0,False)
 for s in range(steps):
     done = False
     screen = game.screen
@@ -137,10 +137,10 @@ for s in range(steps):
         if act >= 1000 and game.cave < 2:
             noVideo = True
             if s% 100 == 0:
-                game.__init__(1,'Connan',444,444,1,True,s)
+                game.__init__(1,'Connan',444,444,1,True,s,False)
                 noVideo = False
             if noVideo:
-                game.__init__(1,'Connan',444,444,1,False,s)
+                game.__init__(1,'Connan',444,444,1,True,s,False)
             gc.collect()
             done = True
         
