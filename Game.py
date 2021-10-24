@@ -1,4 +1,6 @@
 import sys
+
+from tensorflow.python.util.deprecation import rewrite_argument_docstring
 import GameSettings as settings
 from GameMap import GameMap
 import pygame
@@ -121,7 +123,7 @@ def run_game(xPixel,yPixel,screenFactor):
     map = GameMap()
     pygame.init()
     global screen
-    screen = pygame.display.set_mode((settings.mapWidth+150, settings.mapHeigth+70))
+    screen = pygame.display.set_mode((settings.mapWidth+100, settings.mapHeigth+70))
     font = pygame.font.Font('freesansbold.ttf', 12)
     text = font.render("Please select the type of the player (Warrior or Wizard). Press 1 for Warrior or 2 for Wizard.", True, (255,0,0), (0,0,0))
     textRect = text.get_rect()
@@ -131,7 +133,6 @@ def run_game(xPixel,yPixel,screenFactor):
     pygame.display.flip()
     writeText = True
     while writeText:
-        typeinput = True
         for event in pygame.event.get():
             global player
 
@@ -221,7 +222,8 @@ def run_game(xPixel,yPixel,screenFactor):
                         map.createEnemies(player, GameEnum.MovementType.left)
                         enemyMove()
                     else:
-                        settings.reward -= 1  
+                        settings.reward -= 1
+                        enemyMove()
                     
                     
                 if event.key == pygame.K_w:
@@ -237,6 +239,7 @@ def run_game(xPixel,yPixel,screenFactor):
                         enemyMove()
                     else:
                         settings.reward -= 1
+                        enemyMove()
                 if event.key == pygame.K_d:
                     player.playerMovement(GameEnum.MovementType.right)
                     if Xposition != player.currentPositionX or Yposition != player.currentPositionY:
@@ -250,6 +253,7 @@ def run_game(xPixel,yPixel,screenFactor):
                         enemyMove()  
                     else:
                         settings.reward -= 1
+                        enemyMove()
                 if event.key == pygame.K_s:
                     player.playerMovement(GameEnum.MovementType.down)
                     if Xposition != player.currentPositionX or Yposition != player.currentPositionY:
@@ -263,6 +267,7 @@ def run_game(xPixel,yPixel,screenFactor):
                         enemyMove()  
                     else:
                         settings.reward -= 1
+                        enemyMove()
                 if event.key == pygame.K_r:
                     if settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.visible and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.fogged:
                         oldhitpoints = player.hitPoints
@@ -404,6 +409,7 @@ def run_game(xPixel,yPixel,screenFactor):
                     text =player.name + " enters cave No " + str(cave + 1)
                     settings.addGameText(text)
                 
+                print(settings.reward)
                 printText()
                 printPlayerStatus()
                 DrawMap.drawMap()
@@ -412,5 +418,5 @@ def run_game(xPixel,yPixel,screenFactor):
                 DrawMap.drawPlayer(player.currentPositionX, player.currentPositionY)
                 pygame.display.update()
                     
-run_game(960,480,3)
+run_game(444,444,1)
 
