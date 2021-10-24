@@ -33,6 +33,9 @@ class GameMapGraphics():
         self.white = (255,255,255)
         self.magenta = (255,0,230)
         self.black = (0,0,0)
+        self.pink = (255,100,180)
+        self.royalblue4 = (39,64,139)
+        self.royalblue = (65,105,225)
 
     def drawMap(self):
         '''Creates the image of the game map.'''
@@ -42,7 +45,7 @@ class GameMapGraphics():
                     pygame.draw.rect(self.screen, self.black, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                 if settings.tiles[x][y].ground == GameEnum.GroundType.floor:
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.unknown:
-                        pygame.draw.rect(self.screen, self.gray, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen, self.pink, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.visible:
                         pygame.draw.rect(self.screen, self.red, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.fogged:
@@ -51,9 +54,9 @@ class GameMapGraphics():
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.unknown:
                         pygame.draw.rect(self.screen, self.black, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.visible:
-                        pygame.draw.rect(self.screen, self.yellow, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen,self.royalblue, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.fogged:
-                        pygame.draw.rect(self.screen, (255,200,0), [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen,self.royalblue4, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
 
     def drawPlayer(self,x,y):
         '''Creates the image of the player.'''
