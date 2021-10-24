@@ -8,18 +8,29 @@ import time
 import pandas as pd
 import gc
 import sys
+import tensorflow.keras.losses as kls
 
 
-
+featuresCNN1 = 8
+CNN1Shape = 12
+CNN1Step =4
+denseLayerN = 256
+featuresCNN2 = 32
+CNN2Shape = 4
+CNN2Step = 2
+featuresCNN3 = 32
+CNN3Shape = 3
+CNN3Step = 1
+input = (444,444,3)
 class critic(tf.keras.Model):
     '''This class creates the model of the critic part of the reiforcment learning algorithm'''
     def __init__(self):
         super().__init__()
-        self.l1 = tf.keras.layers.Conv2D(32,(8,8),(4,4),activation = 'relu',input_shape=(148,148,3))
-        self.l2 = tf.keras.layers.Conv2D(64,(4,4),2,activation = 'relu')
-        self.l3 = tf.keras.layers.Conv2D(64,(3,3),1,activation = 'relu')
+        self.l1 = tf.keras.layers.Conv2D(featuresCNN1,(CNN1Shape,CNN1Shape),CNN1Step,activation = 'relu',input_shape=input)
+        self.l2 = tf.keras.layers.Conv2D(featuresCNN2,(CNN2Shape,CNN2Shape),CNN2Step,activation = 'relu')
+        self.l3 = tf.keras.layers.Conv2D(featuresCNN3,(CNN2Shape,CNN2Shape),CNN3Step,activation = 'relu')
         self.l4 = tf.keras.layers.Flatten()
-        self.l5 = tf.keras.layers.Dense(512,activation = 'relu')
+        self.l5 = tf.keras.layers.Dense(denseLayerN,activation = 'relu')
         self.v = tf.keras.layers.Dense(1, activation = None)
 
     def call(self,input_data):
@@ -35,11 +46,11 @@ class actor(tf.keras.Model):
     '''This class creates the model of the critic part of the reiforcment learning algorithm'''
     def __init__(self):
         super().__init__()
-        self.l1 = tf.keras.layers.Conv2D(32,(8,8),4,activation = 'relu',input_shape=(1,148,148,3))
-        self.l2 = tf.keras.layers.Conv2D(64,(4,4),2,activation = 'relu')
-        self.l3 = tf.keras.layers.Conv2D(64,(3,3),1,activation = 'relu')
+        self.l1 = tf.keras.layers.Conv2D(featuresCNN1,(CNN1Shape,CNN1Shape),CNN1Step,activation = 'relu',input_shape=(148,148,3))
+        self.l2 = tf.keras.layers.Conv2D(featuresCNN2,(CNN2Shape,CNN2Shape),CNN2Step,activation = 'relu')
+        self.l3 = tf.keras.layers.Conv2D(featuresCNN3,(CNN2Shape,CNN2Shape),CNN3Step,activation = 'relu')
         self.l4 = tf.keras.layers.Flatten()
-        self.l5 = tf.keras.layers.Dense(512,activation = 'relu')
+        self.l5 = tf.keras.layers.Dense(denseLayerN,activation = 'relu')
         self.a = tf.keras.layers.Dense(9, activation ='softmax')
 
     def call(self,input_data):
@@ -74,41 +85,80 @@ class agent():
         # #print(self.log_prob)
         # return action[0]
 
+    def preprocess1(self,states, actions, rewards, gamma):
+        discnt_rewards = []
+        sum_reward = 0        
+        rewards.reverse()
+        for r in rewards:
+            sum_reward = r + gamma*sum_reward
+            discnt_rewards.append(sum_reward)
+        discnt_rewards.reverse()
+        states = np.array(states, dtype=np.float32)
+        actions = np.array(actions, dtype=np.int32)
+        discnt_rewards = np.array(discnt_rewards, dtype=np.float32)
+        return states, actions, discnt_rewards
 
-    def actor_loss(self, prob, action, td):
-        dist = tfp.distributions.Categorical(probs=prob, dtype=tf.float32)
-        log_prob = dist.log_prob(action)
-        loss = -log_prob*td
+    def actor_loss(self, probs, actions, td):
+        
+        probability = []
+        log_probability= []
+        for pb,a in zip(probs,actions):
+          dist = tfp.distributions.Categorical(probs=pb, dtype=tf.float32)
+          log_prob = dist.log_prob(a)
+          prob = dist.prob(a)
+          probability.append(prob)
+          log_probability.append(log_prob)
+
+        # print(probability)
+        # print(log_probability)
+
+        p_loss= []
+        e_loss = []
+        td = td.numpy()
+        #print(td)
+        for pb, t, lpb in zip(probability, td, log_probability):
+                        t =  tf.constant(t)
+                        policy_loss = tf.math.multiply(lpb,t)
+                        entropy_loss = tf.math.negative(tf.math.multiply(pb,lpb))
+                        p_loss.append(policy_loss)
+                        e_loss.append(entropy_loss)
+        p_loss = tf.stack(p_loss)
+        e_loss = tf.stack(e_loss)
+        p_loss = tf.reduce_mean(p_loss)
+        e_loss = tf.reduce_mean(e_loss)
+        # print(p_loss)
+        # print(e_loss)
+        loss = -p_loss - 0.0001 * e_loss
+        #print(loss)
         return loss
 
-
-
-    def learn(self, state, action, reward, next_state, done):
-        #state = np.array([state])
-        #next_state = np.array([next_state])
-        #self.gamma = tf.convert_to_tensor(0.99, dtype=tf.double)
-        #d = 1 - done
-        #d = tf.convert_to_tensor(d, dtype=tf.double)
+    def learn(self, states, actions, discnt_rewards):
+        discnt_rewards = tf.reshape(discnt_rewards, (len(discnt_rewards),))
+        
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
-            p = self.actor(state, training=True)
-            v =  self.critic(state,training=True)
-            vn = self.critic(next_state, training=True)
-            td = reward + self.gamma*vn*(1-int(done)) - v
-            a_loss = self.actor_loss(p, action, td)
-            c_loss = td**2
+            p = self.actor(states, training=True)
+            v =  self.critic(states,training=True)
+            v = tf.reshape(v, (len(v),))
+            td = tf.math.subtract(discnt_rewards, v)
+            # print(discnt_rewards)
+            # print(v)
+            #print(td.numpy())
+            a_loss = self.actor_loss(p, actions, td)
+            c_loss = 0.5*kls.mean_squared_error(discnt_rewards, v)
         grads1 = tape1.gradient(a_loss, self.actor.trainable_variables)
         grads2 = tape2.gradient(c_loss, self.critic.trainable_variables)
         self.a_opt.apply_gradients(zip(grads1, self.actor.trainable_variables))
         self.c_opt.apply_gradients(zip(grads2, self.critic.trainable_variables))
         return a_loss, c_loss
 
+tf.random.set_seed(336699)
 agentoo7 = agent()
-steps = 1000
-total_reward = 0
-start_time = time. time()
+episode = 1000
+ep_reward = []
+total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,1,False,0)
-for s in range(steps):
+game = GamePAI(1,'Connan',444,444,3,True,0)
+for s in range(episode):
     done = False
     screen = game.screen
     array = pygame.surfarray.array3d(screen)
@@ -116,47 +166,58 @@ for s in range(steps):
     array = array[:settings.mapHeigth,:settings.mapWidth]
     array =  np.expand_dims(array, axis=0)
     state = array/255
-    #total_reward = 0
+    total_reward = 0
     all_aloss = []
     all_closs = []
-    act = 0
+    rewards = []
+    states = []
+    actions = []
+    steps = 0
     while not done:
-        #env.render()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        act += 1
+        steps += 1
         action = agentoo7.act(state)
-        #print(action)
-        next_state, reward = game.playerAction(action,s+1)
+        next_state, reward = game.playerAction(action)
         done = game.gameOver(s)
-        aloss, closs = agentoo7.learn(state, action, reward, next_state, done)
-        all_aloss.append(aloss)
-        all_closs.append(closs)
+        rewards.append(reward)
+        states.append(state)
+        #actions.append(tf.one_hot(action, 2, dtype=tf.int32).numpy().tolist())
+        actions.append(action)
         state = next_state
+        total_reward += reward
+        action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
+        print(action_name[action],reward,game.cave)
+        if steps%1000 == 0:
+            print(steps,total_reward,action,game.cave)
 
-        if act% 1000 == 0:
-            print(act,reward,len(settings.enemies),action)
-
-        if act >= 1000 and game.cave < 2:
+        if steps >= 4000 and game.cave < 6:
             noVideo = True
             if s% 100 == 0:
-                game.__init__(1,'Connan',444,444,1,True,s)
+                game.__init__(1,'Connan',444,444,3,True,s)
                 noVideo = False
             if noVideo:
-                game.__init__(1,'Connan',444,444,1,False,s)
+                game.__init__(1,'Connan',444,444,3,True,s)
             gc.collect()
             done = True
-        
-        #total_reward += reward
-        if done == True:
-            act = 0
-            total_reward += reward 
-            mean_reward = total_reward/(s+1)
-            episodeStat = [s,reward,mean_reward]
+
+        if steps%40 == 0:
+            states, actions, discnt_rewards = agentoo7.preprocess1(states, actions, rewards, 0.99)
+            al,cl = agentoo7.learn(states, actions, discnt_rewards) 
+            states = []
+            actions = []
+            rewards = []
+            #print(f"al{al}") 
+            #print(f"cl{cl}")
+    
+        if done:
+            ep_reward.append(total_reward)
+            avg_reward = np.mean(ep_reward[-100:])
+            total_avgr.append(avg_reward)
+            print("total reward after {} episode is {} and avg reward is {} cave number is {}".format(s, total_reward, avg_reward,game.cave))
+            episodeStat = [s,total_reward,avg_reward]
             dfrewards.append(episodeStat)
-            print('end of episode ' + str(s) + ' episode rewards ' + str(reward) + ' mean reward:' + str(mean_reward))
 dfrewards = pd.DataFrame(dfrewards, columns=['episode', 'rewards', 'mean rewards'])
-dfrewards.to_excel(r'D:\ekpa\diplomatiki\agent3CNNrewards3Normalize_to_one.xlsx')
-print("--- %s seconds ---" % (time. time() - start_time))
+dfrewards.to_excel(r'D:\ekpa\diplomatiki\playerActor2CNNnStep.xlsx')
