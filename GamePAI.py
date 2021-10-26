@@ -230,6 +230,7 @@ class GamePAI():
         text6 = font.render('Potions: ' + str(self.countHealthPotion())+ "(H) /" + str(self.countManaPotion()) + "(M)", True, (255,0,0), (0,0,0))
         text7 = font.render('Level: ' + str(self.player.getLevel()), True, (255,0,0), (0,0,0))
         text8 = font.render('XP: ' + str(self.player.experiencePoints), True, (255,0,0), (0,0,0)) 
+        text9 = font.render('Cave: ' + str(self.cave), True, (255,0,0), (0,0,0))
         self.screen.blit(text, (settings.mapWidth,8))
         self.screen.blit(text1, (settings.mapWidth,21))
         self.screen.blit(text2, (settings.mapWidth,34))
@@ -240,6 +241,8 @@ class GamePAI():
         self.screen.blit(text6, (settings.mapWidth,99))
         self.screen.blit(text7, (settings.mapWidth,112))
         self.screen.blit(text8, (settings.mapWidth,125))
+        self.screen.blit(text9, (settings.mapWidth,138))
+
 
 
     def printText(self):
@@ -282,9 +285,9 @@ class GamePAI():
             self.player.playerMovement(movementType)
             if Xposition != self.player.currentPositionX or Yposition != self.player.currentPositionY:
                 if unknownTille > self.map.countUknownTile():
-                    self.reward += 1
+                    self.reward += 90
                 else:
-                    self.reward -= 0
+                    self.reward -= 1
                 if len(self.player.inventory) > inventory:
                     self.reward += 1000
                 self.map.createEnemies(self.player,movementType)
@@ -319,12 +322,12 @@ class GamePAI():
                 settings.addGameText(text)
                 self.afterMoveDepiction()
             if (self.player.hitPoints - oldhitpoints) == 4 and self.countHealthPotion() == 0:
-                self.reward += 10
+                self.reward += 100
             if (self.player.hitPoints - oldhitpoints) < 4 or self.countHealthPotion() == 0:
                 self.reward -= 1
             if isinstance(self.player, Wizard):
                 if  (self.player.manaPoints - oldmanapoints) == 4 and self.countManaPotion() == 0:
-                    self.reward += 10
+                    self.reward += 100
                 if  (self.player.manaPoints - oldmanapoints) < 4 or self.countManaPotion() == 0:
                     self.reward -= 1
 
@@ -340,7 +343,7 @@ class GamePAI():
                     oldhitpoints = self.player.hitPoints
                     self.player.use(item)           
                 if (self.player.hitPoints - oldhitpoints) == 20:
-                    self.reward += 10
+                    self.reward += 100
                 if (self.player.hitPoints - oldhitpoints) < 20:
                     self.reward -= 1
             else :
@@ -367,7 +370,7 @@ class GamePAI():
                     oldmanapoints = self.player.manaPoints
                     self.player.use(item)
                 if  (self.player.manaPoints - oldmanapoints) == 20:
-                    self.reward += 10
+                    self.reward += 100
                 if  (self.player.manaPoints - oldmanapoints) < 20:
                     self.reward -= 1
                 if index == None:
@@ -382,7 +385,7 @@ class GamePAI():
         #This code chunk performs the attack of the player.
             index = self.player.enemyToAttack()
             if index == None:
-                self.reward -= 1
+                self.reward -= 10
             if index != None:
                 enemy = settings.enemies[index]
                 boolean = self.player.attack(enemy)
@@ -455,6 +458,7 @@ class GamePAI():
             manapotion = self.countManaPotion
             base_int_str = self.player.baseIntelligence
         playerstatus = np.array([self.player.hitPoints,self.player.maxHitPoints,base_int_str,inteligence,manapoints,maxmanapoints,manapotion,self.countHealthPotion(),self.player.getAttackDamage(),self.player.getLevel()],dtype=np.int32)
+        playerstatus = playerstatus/(max(playerstatus))
         textList = []
         for text in settings.game_text:
             textNname = text[len(self.player.name):]
@@ -465,7 +469,10 @@ class GamePAI():
         return state, self.reward, playerstatus, textArray
 
     def gameVocab(self,textList):
-        sum_text = 0
+        array = np.array([])
+        list1 = []
+        list2 = []
+        #sum_text = 0
         game_vocab = {'welcome':100,'to':1,'the':2,'Wizard':3,'Werdna':4,'Ring':5,'adventure.':6,
         'Try':7,'to':8,'find':9,'Ring':10,'and':11,'win':12,'Game.':13,"don't":14,'try':15,'cheat.':16,
         "doesn't":17,'posses':18,'health':19,'potion.':20,"can't":21,'uses':22,'mana':22,'kills':23,'earn':24,
@@ -477,17 +484,43 @@ class GamePAI():
         'p':71,'equip':72,'with':73,'add':74,'which':75,'add':76,'max':77,'HP':78,'MP':79,'player':80,'inteligence':81,
         'earn':82,'attack':83,'strength':84,'east.':85,'west.':86,'north.':87,'south.':89,'ring':90,'Mana':91,'this':92,'Gray':93,
         'Amazing':94,'Deadly':95,'Ancient':96,'Sword':97,'Staff':98,'weapon.':99,'rest':101}
-        text = textList[len(textList)-1]
-        text = text.split()
-        for word in text:
-            if word in game_vocab:
-                sum_text += game_vocab[word]
-            else:
-                sum_text += int(word)
-        array_text = np.array(sum_text,dtype=np.int32)
-        array_text = np.reshape(array_text,(1,1))
+        # this code chunk creates a sum input for the model.
+        # text = textList[len(textList)-1]
+        # text = text.split()
+        # for word in text:
+            # if word in game_vocab:
+               # sum_text += game_vocab[word]
+            # else:
+                # sum_text += int(word)
+        # array_text = np.array(sum_text,dtype=np.int32)
+        # array_text = np.reshape(array_text,(1,1))
         #print(array_text,array_text.shape)
-        return array_text
+        # return array_text
+        for text in textList:
+            text = text.split()
+            list1 = []
+            for word in text:
+                if word in game_vocab:
+                    list1.append(game_vocab[word])
+                else:
+                    list1.append(int(word))
+            if len(list1) < 25:
+                for i in range((25-len(list1))):
+                    list1.insert(len(list1)+1,0)
+            list2.append(list1)
+        if len(list2)<5:
+            for i in range (5-len(list2)):
+                list2.append([0]*25)
+        array = np.array(list2,dtype=np.int32)
+        #array = np.reshape(array,(1,125))
+        #array = np.expand_dims(array, axis=0)
+        #array = np.expand_dims(array, axis=0)
+        #print(type(array))
+        #tfarray = tf.convert_to_tensor(array)
+        array = np.reshape(array,(1,125))
+        array = array/101
+        #print(sumarray.shape,sumarray)
+        return array
 
     def enterCave(self,cave):
         '''This function Checks if the tile is stair or the tile stores the Werdna Ring. 
