@@ -10,16 +10,18 @@ import sys
 
 featuresCNN1 = 16
 CNN1Shape = 4
-CNN1Step =2
-denseLayerN = 512
-denseLayerNL_2 = 512
-denseLayerNL_3= 512
-denseLayerNL_21 = 8
-denseLayerNL_31 = 8
-featuresCNN2 = 16
-CNN2Shape = 3
+CNN1Step = 2
+featuresCNN2 = 32
+CNN2Shape = 2
 CNN2Step = 2
-n_step = 8
+denseLayerN = 512
+denseLayerNL_2 = 32
+denseLayerNL_3= 64
+denseLayerNL_21 = 128
+denseLayerNL_31 = 128
+dropoutRate1 = 0.3
+dropoutRate2 = 0.3
+n_step = 4
 input = (148,148,3)
 class critic(tf.keras.Model):
     '''This class creates the model of the critic part of the reiforcment learning algorithm'''
@@ -41,9 +43,10 @@ class critic(tf.keras.Model):
         self.l1_21 = tf.keras.layers.Dense(denseLayerNL_21,activation = 'relu')
         self.l1_3 = tf.keras.layers.Dense(denseLayerNL_3,activation = 'relu')
         self.l1_31 = tf.keras.layers.Dense(denseLayerNL_31,activation = 'relu')
-        self.conc = tf.keras.layers.Concatenate(axis=-1)
-        self.add = tf.keras.layers.Concatenate(axis=-1)
-        #self.drop = tf.keras.layers.Dropout(0.2)
+        self.conc1 = tf.keras.layers.Concatenate(axis=-1)
+        self.conc2 = tf.keras.layers.Concatenate(axis=-1)
+        #self.drop1 = tf.keras.layers.Dropout(dropoutRate1)
+        #self.drop2 = tf.keras.layers.Dropout(dropoutRate2)
         self.v = tf.keras.layers.Dense(1, activation = None)
         
 
@@ -51,17 +54,17 @@ class critic(tf.keras.Model):
         x = self.l1(input_data)
         x = self.l2(x)
         x = self.l3(x)
+        print(x.shape)
         x= self.l4(x)
-        y = self.l1_2(input_data2)
-        y = self.l1_21(y)
-        d = self.l1_3(input_data1)
-        d = self.l1_31(d)
-        e = self.add((y,d))
-        g = self.conc((e,x))
-        #e = tf.concat([x,y],axis = -1)
-        #f= tf.concat([d,e],axis = -1)
-        #e = tf.add(x,y)
-        #f= self.drop(g)
+        y = self.l1_2(input_data1)
+        #y = self.l1_21(y) 
+        #y = self.drop1(y)
+        z = self.l1_3(input_data2)
+        #z = self.l1_31(z)
+        #z = self.drop2(z)
+        h = self.conc1((y,z))
+        #e = self.add((y,d))
+        g = self.conc2((h,x))
         v = self.v(g)
         return v
 
@@ -84,9 +87,10 @@ class actor(tf.keras.Model):
         self.l1_21 = tf.keras.layers.Dense(denseLayerNL_21,activation = 'relu')
         self.l1_3 = tf.keras.layers.Dense(denseLayerNL_3,activation = 'relu')
         self.l1_31 = tf.keras.layers.Dense(denseLayerNL_31,activation = 'relu')
-        self.conc = tf.keras.layers.Concatenate(axis=-1)
-        self.add = tf.keras.layers.Concatenate(axis=-1)
-        #self.drop = tf.keras.layers.Dropout(0.2)
+        self.conc1 = tf.keras.layers.Concatenate(axis=-1)
+        self.conc2 = tf.keras.layers.Concatenate(axis=-1)
+        #self.drop1 = tf.keras.layers.Dropout(dropoutRate1)
+        #self.drop2 = tf.keras.layers.Dropout(dropoutRate2)
         #self.conc = tf.keras.layers.concatenate([self.l4,self.l1_2],axis = -1)
         #self.conc3 = tf.keras.layers.concatenate([self.l1_3,self.conc],axis = -1)
         self.a = tf.keras.layers.Dense(9, activation ='softmax')
@@ -97,16 +101,15 @@ class actor(tf.keras.Model):
         x = self.l2(x)
         x = self.l3(x)
         x= self.l4(x)
-        y = self.l1_2(input_data2)
+        y = self.l1_2(input_data1)
         y = self.l1_21(y)
-        d = self.l1_3(input_data1)
-        d = self.l1_31(d)
-        e = self.add((y,d))
-        g = self.conc((e,x))
-        #e = tf.concat([x,y],axis = -1)
-        #f= tf.concat([d,e],axis = -1)
-        #e = tf.add(x,y)
-        #f= self.drop(g)
+        #y = self.drop1(y)
+        z = self.l1_3(input_data2)
+        z = self.l1_31(z)
+        #z = self.drop2(z)
+        h = self.conc1((y,z))
+        #e = self.add((y,d))
+        g = self.conc2((h,x))
         a = self.a(g)
         return a
 
@@ -152,7 +155,7 @@ class agent():
         gameTexts = np.squeeze(gameTexts,axis = 1)
         #print(gameTexts.shape,gameTexts,playerstatus,playerstatus.shape)
         #gameTexts = np.expand_dims(gameTexts, axis=0)
-        print(gameTexts.shape,gameTexts,playerstatus,playerstatus.shape,states.shape)
+        #print(gameTexts.shape,gameTexts,playerstatus,playerstatus.shape,states.shape)
         actions = np.array(actions, dtype=np.int32)
         discnt_rewards = np.array(discnt_rewards, dtype=np.float32)
         return states,playerstatus,gameTexts, actions, discnt_rewards
@@ -255,7 +258,7 @@ for s in range(episode):
             print(steps,total_reward,action_name[action],game.cave)
 
         if s <= 2000: 
-            if steps >= 100 and game.cave < 2:
+            if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
                     game.__init__(1,'Connan',444,444,1,True,s,False)
@@ -266,7 +269,7 @@ for s in range(episode):
                 #print(s,total_reward,game.cave)
                 done = True
         if s > 2000: 
-            if steps >= 1000 and game.cave < 2:
+            if steps >= 10000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
                     game.__init__(1,'Connan',444,444,1,True,s,False)
@@ -296,4 +299,4 @@ for s in range(episode):
             episodeStat = [s,total_reward,avg_reward]
             dfrewards.append(episodeStat)
 dfrewards = pd.DataFrame(dfrewards, columns=['episode', 'rewards', 'mean rewards'])
-dfrewards.to_excel(r'D:\ekpa\diplomatiki\playerActor2CNNnStep.xlsx')
+dfrewards.to_excel(r'D:\ekpa\diplomatiki\playerActor2CNNnStepwithtext.xlsx')
