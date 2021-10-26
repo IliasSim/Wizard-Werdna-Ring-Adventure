@@ -45,7 +45,7 @@ class GameMapGraphics():
                     pygame.draw.rect(self.screen, self.black, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                 if settings.tiles[x][y].ground == GameEnum.GroundType.floor:
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.unknown:
-                        pygame.draw.rect(self.screen, self.pink, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen, self.black, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.visible:
                         pygame.draw.rect(self.screen, self.red, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.fogged:
