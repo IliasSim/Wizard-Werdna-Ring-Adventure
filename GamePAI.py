@@ -23,6 +23,9 @@ class GamePAI():
         self.xPixel = xPixel
         self.yPixel = yPixel
         self.screenFactor = screenFactor
+        self.buffer_State = []
+        self.buffer_playerStatus = []
+        self.buffer_text = []
         settings.screenFactor = screenFactor
         settings.mapWidth = int(self.xPixel/3)*screenFactor
         settings.mapHeigth = int(self.yPixel/3)*screenFactor
@@ -53,6 +56,7 @@ class GamePAI():
         self.playerType = playerType
         self.playerName = playerName
         self.total_reward = []
+        self.buffer_size = 7
         if not self.playHP:
             settings.enemies = []
             settings.game_text = []
@@ -148,9 +152,9 @@ class GamePAI():
 
     def gameOver(self,s):
         '''Checks if the player is dead and reinitilize the game creating a new instance of the GamePAI class.'''
-        self.done = False
+        done = False
         if self.player.hitPoints <= 0:
-            self.done = True
+            done = True
             #self.reward -= 10
             settings.gameCount = settings.gameCount + 1
             #print(self.player.name,'is dead. Game Over ' + str(settings.gameCount) + ' episode rewards ' + str(self.reward))
@@ -161,7 +165,7 @@ class GamePAI():
             else:
                 self.__init__(self.playerType,self.playerName,self.xPixel,self.yPixel,self.screenFactor,True,s,False)
             gc.collect()
-        return self.done
+        return done
 
     def drawMap(self):
         '''This function draws the map of the game'''
@@ -170,7 +174,7 @@ class GamePAI():
         self.DrawMap.enemyDepiction()
         self.DrawMap.drawPlayer(self.player.currentPositionX, self.player.currentPositionY)
         #FramePerSec = pygame.time.Clock()
-        #FramePerSec.tick(5)
+        #FramePerSec.tick(30)
         if self.depict == True:
             pygame.display.update()
 
@@ -285,9 +289,9 @@ class GamePAI():
             self.player.playerMovement(movementType)
             if Xposition != self.player.currentPositionX or Yposition != self.player.currentPositionY:
                 if unknownTille > self.map.countUknownTile():
-                    self.reward += 90
+                    self.reward += 100
                 else:
-                    self.reward -= 1
+                    self.reward -= 0
                 if len(self.player.inventory) > inventory:
                     self.reward += 1000
                 self.map.createEnemies(self.player,movementType)
@@ -295,11 +299,9 @@ class GamePAI():
                 self.enterCave(self.cave)
                 self.afterMoveDepiction()
                 if settings.tiles[settings.exitx][settings.exity].visibility == GameEnum.VisibilityType.visible:
-                    #print("I work")
                     self.reward += 200
             if Xposition == self.player.currentPositionX and Yposition == self.player.currentPositionY:
-                #print('I work')
-                self.reward -= 10
+                self.reward -= 1
                 self.enemyMove()  
                 self.afterMoveDepiction()   
         if action == 4:
@@ -385,7 +387,7 @@ class GamePAI():
         #This code chunk performs the attack of the player.
             index = self.player.enemyToAttack()
             if index == None:
-                self.reward -= 10
+                self.reward -= 1
             if index != None:
                 enemy = settings.enemies[index]
                 boolean = self.player.attack(enemy)
@@ -444,7 +446,7 @@ class GamePAI():
         state = state.swapaxes(0,1)
         state = state[:settings.mapHeigth,:settings.mapWidth]
         state = state/255
-        state =  np.expand_dims(state, axis=0)
+        #state =  np.expand_dims(state, axis=0)
         #std_reward = self.standardize_reward(self.reward)
         manapoints = 0
         maxmanapoints = 0
@@ -463,10 +465,39 @@ class GamePAI():
         for text in settings.game_text:
             textNname = text[len(self.player.name):]
             textList.append(textNname)        
-        playerstatus = np.expand_dims(playerstatus, axis=0)
+        #playerstatus = np.expand_dims(playerstatus, axis=0)
         textArray = self.gameVocab(textList)
         #reward = self.standardize_reward(self.reward)
-        return state, self.reward, playerstatus, textArray
+        if len(self.buffer_playerStatus) > 3:
+            del self.buffer_playerStatus[0]
+        if len(self.buffer_playerStatus)<=3:
+            for i in range(3-len(self.buffer_playerStatus)):
+                self.buffer_playerStatus.append(playerstatus)
+        self.buffer_playerStatus.append(playerstatus)
+        array_playerStatus = np.array(self.buffer_playerStatus)
+        array_playerStatus = np.expand_dims(array_playerStatus, axis=0)
+
+        if len(self.buffer_State) > self.buffer_size:
+            del self.buffer_State[0]
+        if len(self.buffer_State)<=self.buffer_size:
+            for i in range(self.buffer_size-len(self.buffer_State)):
+                self.buffer_State.append(state)
+        self.buffer_State.append(state)
+        array_state = np.array(self.buffer_State)
+        array_state = np.expand_dims(array_state, axis=0)
+
+        if len(self.buffer_text) > self.buffer_size:
+            del self.buffer_text[0]
+        if len(self.buffer_text)<=self.buffer_size:
+            for i in range(3-len(self.buffer_text)):
+                self.buffer_text.append(textArray)
+        self.buffer_text.append(textArray)
+        array_text = np.array(self.buffer_text)
+        array_text = np.expand_dims(array_text, axis=0)
+        done = False
+        if self.player.hitPoints <= 0:
+            done = True
+        return array_state, self.reward, array_playerStatus, array_text, done
 
     def gameVocab(self,textList):
         array = np.array([])
@@ -517,7 +548,7 @@ class GamePAI():
         #array = np.expand_dims(array, axis=0)
         #print(type(array))
         #tfarray = tf.convert_to_tensor(array)
-        array = np.reshape(array,(1,125))
+        array = np.reshape(array,(125))
         array = array/101
         #print(sumarray.shape,sumarray)
         return array
@@ -588,12 +619,13 @@ class GamePAI():
     
     def initialGameState(self):
         '''Returns the intial state of the game'''
+        #print(len(self.buffer_State),len(self.buffer_text),len(self.buffer_playerStatus))
         screen = self.screen
         state = pygame.surfarray.array3d(screen)
         state = state.swapaxes(0,1)
         state = state[:settings.mapHeigth,:settings.mapWidth]
         state = state/255
-        state =  np.expand_dims(state, axis=0)
+        #state =  np.expand_dims(state, axis=0)
         #std_reward = self.standardize_reward(self.reward)
         manapoints = 0
         maxmanapoints = 0
@@ -607,16 +639,37 @@ class GamePAI():
             manapotion = self.countManaPotion
             base_int_str = self.player.baseIntelligence
         playerstatus = np.array([self.player.hitPoints,self.player.maxHitPoints,base_int_str,inteligence,manapoints,maxmanapoints,manapotion,self.countHealthPotion(),self.player.getAttackDamage(),self.player.getLevel()])
-        playerstatus = np.expand_dims(playerstatus, axis=0)
+        playerstatus = playerstatus/max(playerstatus)
         textList = []
         for text in settings.game_text:
             textNname = text[len(self.player.name):]
             textList.append(textNname)
         textArray = self.gameVocab(textList)
+
+        if len(self.buffer_playerStatus)<=self.buffer_size:
+            for i in range(self.buffer_size-len(self.buffer_playerStatus)):
+                self.buffer_playerStatus.append(playerstatus)
+        self.buffer_playerStatus.append(playerstatus)
+        array_playerStatus = np.array(self.buffer_playerStatus)
+        array_playerStatus = np.expand_dims(array_playerStatus, axis=0)
+        if len(self.buffer_State)<=self.buffer_size:
+            for i in range(self.buffer_size-len(self.buffer_State)):
+                self.buffer_State.append(state)
+        self.buffer_State.append(state)
+        array_state = np.array(self.buffer_State)
+        array_state = np.expand_dims(array_state, axis=0)
+
+        if len(self.buffer_text)<=self.buffer_size:
+            for i in range(self.buffer_size-len(self.buffer_text)):
+                self.buffer_text.append(textArray)
+        self.buffer_text.append(textArray)
+        array_text = np.array(self.buffer_text)
+        array_text = np.expand_dims(array_text, axis=0)
+        #print(array_text.shape,array_playerStatus.shape,array_state.shape)
         #textArray = np.expand_dims(textArray, axis=0)
-        return state, playerstatus, textArray
+        return array_state, array_playerStatus, array_text
 
 
 
 
-#game = GamePAI(2,'Merlin',960,480,3,True,0,True)
+#game = GamePAI(1,'Connan',444,444,3,True,0,True)
