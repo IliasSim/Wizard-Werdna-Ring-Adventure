@@ -54,9 +54,9 @@ class GameMapGraphics():
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.unknown:
                         pygame.draw.rect(self.screen, self.black, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.visible:
-                        pygame.draw.rect(self.screen,self.royalblue, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen,self.pink, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
                     if  settings.tiles[x][y].visibility == GameEnum.VisibilityType.fogged:
-                        pygame.draw.rect(self.screen,self.royalblue4, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen,self.pink, [settings.exitx*self.tilesize,settings.exity*self.tilesize,self.tilefilsize,self.tilefilsize])
 
     def drawPlayer(self,x,y):
         '''Creates the image of the player.'''
