@@ -13,7 +13,7 @@ from Tile import Tile
 import numpy as np
 import gc
 import numpy as np
-import tensorflow as tf
+#import tensorflow as tf
 eps = np.finfo(np.float32).eps.item()
 
 class GamePAI():
@@ -26,6 +26,11 @@ class GamePAI():
         self.buffer_State = []
         self.buffer_playerStatus = []
         self.buffer_text = []
+        self.cave = 0
+        self.playerType = playerType
+        self.playerName = playerName
+        self.total_reward = []
+        self.buffer_size = 7
         settings.screenFactor = screenFactor
         settings.mapWidth = int(self.xPixel/3)*screenFactor
         settings.mapHeigth = int(self.yPixel/3)*screenFactor
@@ -52,11 +57,6 @@ class GamePAI():
         self.DrawMap = GameMapGraphics(self.screen)
         self.map = GameMap()
         pygame.init()         
-        self.cave = 0
-        self.playerType = playerType
-        self.playerName = playerName
-        self.total_reward = []
-        self.buffer_size = 7
         if not self.playHP:
             settings.enemies = []
             settings.game_text = []
@@ -128,7 +128,7 @@ class GamePAI():
         self.printPlayerStatus()
         if depict == True:
             if self.screenFactor == 1:
-                pygame.display.set_caption(str(game+1))
+                pygame.display.set_caption(str(game))
                 pygame.display.flip()
             else:
                 pygame.display.set_caption("Wizard Werdna Ring "+str(game+1))
@@ -261,8 +261,8 @@ class GamePAI():
         '''Determines the movement of the enemy after the movement of the player.'''
         if settings.enemies != []:
             for enemy in settings.enemies:
-                #if enemy.minDistance(self.player,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY) == 0:
-                    #self.reward -= 0
+                if enemy.minDistance(self.player,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY) == 0:
+                    self.reward -= 0.1
                 enemy.enemyMovement(self.player)
         if self.playHP:
             self.gameOverHP()
@@ -273,6 +273,9 @@ class GamePAI():
         '''This function determines the actions of the player/agent.'''
         #the folling code determines the movement of the payer in the map.
         self.reward = 0
+        initialHitPoint = self.player.hitPoints
+        if isinstance(self.player, Wizard):
+            initialManaPoints = self.player.manaPoints
         if action <= 3:
             if action == 0:
                 movementType = GameEnum.MovementType.up
@@ -289,19 +292,19 @@ class GamePAI():
             self.player.playerMovement(movementType)
             if Xposition != self.player.currentPositionX or Yposition != self.player.currentPositionY:
                 if unknownTille > self.map.countUknownTile():
-                    self.reward += 100
+                    self.reward += 20
                 else:
                     self.reward -= 0
                 if len(self.player.inventory) > inventory:
-                    self.reward += 1000
+                    self.reward += 100
                 self.map.createEnemies(self.player,movementType)
                 self.enemyMove()
                 self.enterCave(self.cave)
                 self.afterMoveDepiction()
                 if settings.tiles[settings.exitx][settings.exity].visibility == GameEnum.VisibilityType.visible:
-                    self.reward += 200
+                    self.reward += 0
             if Xposition == self.player.currentPositionX and Yposition == self.player.currentPositionY:
-                self.reward -= 1
+                self.reward -= 5
                 self.enemyMove()  
                 self.afterMoveDepiction()   
         if action == 4:
@@ -324,14 +327,14 @@ class GamePAI():
                 settings.addGameText(text)
                 self.afterMoveDepiction()
             if (self.player.hitPoints - oldhitpoints) == 4 and self.countHealthPotion() == 0:
-                self.reward += 100
+                self.reward += 10
             if (self.player.hitPoints - oldhitpoints) < 4 or self.countHealthPotion() == 0:
-                self.reward -= 1
+                self.reward -= 0.1
             if isinstance(self.player, Wizard):
                 if  (self.player.manaPoints - oldmanapoints) == 4 and self.countManaPotion() == 0:
-                    self.reward += 100
+                    self.reward += 10
                 if  (self.player.manaPoints - oldmanapoints) < 4 or self.countManaPotion() == 0:
-                    self.reward -= 1
+                    self.reward -= 0.1
 
         if action == 5:
         #This code chunk consumes one health potion and adds 20 point to the player hp.
@@ -345,13 +348,13 @@ class GamePAI():
                     oldhitpoints = self.player.hitPoints
                     self.player.use(item)           
                 if (self.player.hitPoints - oldhitpoints) == 20:
-                    self.reward += 100
+                    self.reward += 10
                 if (self.player.hitPoints - oldhitpoints) < 20:
-                    self.reward -= 1
+                    self.reward -= 0.1
             else :
                 text = self.player.name + " doesn't posses health potion."
                 settings.addGameText(text)
-                self.reward -= 1
+                self.reward -= 0.1
             self.enemyMove()
             self.afterMoveDepiction()
 
@@ -360,7 +363,7 @@ class GamePAI():
             if isinstance(self.player, Warrior):
                     text =self.player.name + " can't uses mana potion."
                     settings.addGameText(text)
-                    self.reward -= 1
+                    self.reward -= 0.1
 
             if isinstance(self.player, Wizard) and self.player.inventory != []:
                 index = None          
@@ -372,13 +375,13 @@ class GamePAI():
                     oldmanapoints = self.player.manaPoints
                     self.player.use(item)
                 if  (self.player.manaPoints - oldmanapoints) == 20:
-                    self.reward += 100
+                    self.reward += 10
                 if  (self.player.manaPoints - oldmanapoints) < 20:
-                    self.reward -= 1
+                    self.reward -= 0.1
                 if index == None:
                     text =self.player.name + " doesn't posses mana potion."
                     settings.addGameText(text)
-                    self.reward -= 1
+                    self.reward -= 0.1
 
             self.enemyMove()
             self.afterMoveDepiction()   
@@ -387,14 +390,14 @@ class GamePAI():
         #This code chunk performs the attack of the player.
             index = self.player.enemyToAttack()
             if index == None:
-                self.reward -= 1
+                self.reward -= 0.5
             if index != None:
                 enemy = settings.enemies[index]
                 boolean = self.player.attack(enemy)
                 if boolean:
-                    self.reward += 100
+                    self.reward += 10
                 if boolean and enemy.hitPoints <= 0:
-                    self.reward += 1000
+                    self.reward += 100
                     if random.random() <= 0.25:
                         self.map.addItem(self.player, enemy.enemyCurrentPossitionX, enemy.enemyCurrentPossitionY)
                 if boolean and enemy.hitPoints <= 0 and self.player.experiencePoints <= 13999:
@@ -426,21 +429,21 @@ class GamePAI():
                     settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store = self.player.dropWeapon()
                     weaponPicked = True
                     self.player.setWeapon(sword)
-                    self.reward += 1000
+                    self.reward += 100
                 if isinstance(self.player, Wizard) and isinstance(settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store, Staff):
                     staff = settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store
                     settings.tiles[self.player.currentPositionX][self.player.currentPositionY].store = self.player.dropWeapon()
                     weaponPicked = True
                     self.player.setWeapon(staff)
-                    self.reward += 1000
+                    self.reward += 100
                 if not weaponPicked:
-                    self.reward -= 1
+                    self.reward -= 0.1
             else:
-                self.reward -= 1
+                self.reward -= 0.1
             self.enemyMove()
             self.afterMoveDepiction()
-        #if self.player.hitPoints <= 0:
-            #self.reward -= 15
+        if self.player.hitPoints <= 0:
+            self.reward -= 1
         screen = self.screen
         state = pygame.surfarray.array3d(screen)
         state = state.swapaxes(0,1)
@@ -475,6 +478,7 @@ class GamePAI():
                 self.buffer_playerStatus.append(playerstatus)
         self.buffer_playerStatus.append(playerstatus)
         array_playerStatus = np.array(self.buffer_playerStatus)
+        # print(array_playerStatus.shape)
         array_playerStatus = np.expand_dims(array_playerStatus, axis=0)
 
         if len(self.buffer_State) > self.buffer_size:
@@ -497,6 +501,12 @@ class GamePAI():
         done = False
         if self.player.hitPoints <= 0:
             done = True
+        if initialHitPoint < self.player.hitPoints:
+            self.reward += 1
+        if isinstance(self.player,Wizard):
+            if initialManaPoints < self.player.manaPoints:
+                self.reward += 1
+        # print(array_state.shape)
         return array_state, self.reward, array_playerStatus, array_text, done
 
     def gameVocab(self,textList):
@@ -671,5 +681,5 @@ class GamePAI():
 
 
 
-
-#game = GamePAI(1,'Connan',444,444,3,True,0,True)
+# if __name__ == '__main__':
+    # game = GamePAI(1,'Connan',444,444,2,True,0,True)
