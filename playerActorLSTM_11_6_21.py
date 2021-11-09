@@ -130,8 +130,8 @@ class agent():
     def __init__(self, gamma = 0.99):
         self.gamma = gamma
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=5e-6,
-        decay_steps=30000,
+        initial_learning_rate=1e-5,
+        decay_steps=10000,
         decay_rate=0.9)
         self.a_opt = tf.keras.optimizers.Adam(lr_schedule)
         self.c_opt = tf.keras.optimizers.Adam(lr_schedule)
@@ -231,10 +231,17 @@ class agent():
 
 #tf.random.set_seed(336699)
 agentoo7 = agent()
+f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\episodes.txt','r')
+episodes_text = int(f.read())
+f.close()
 if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\ actor_model.data-00000-of-00001'):
-    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\ critic_model.data-00000-of-00001')
-if exists('.\model_LSTM_6_11_21\ critic_model'):
-    agentoo7.critic.load_weights('.\model_LSTM_6_11_21\ critic_model')
+    print("actor model is loaded")
+    agentoo7.actor.built = True
+    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\ actor_model')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\ critic_model.data-00000-of-00001'):
+    print("critic model is loaded")
+    agentoo7.critic.built = True
+    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\ critic_model')
 episode = 10000
 ep_reward = []
 total_avgr = []
@@ -282,7 +289,7 @@ for s in range(episode):
         if steps%1000 == 0:
             print(steps,total_reward,action_name[action],game.cave)
 
-        if s <= 2000: 
+        if s + episodes_text <= 2000: 
             if steps >= 2000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
@@ -293,7 +300,7 @@ for s in range(episode):
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
-        if s > 2000: 
+        if s + episodes_text > 2000: 
             if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
@@ -327,9 +334,15 @@ for s in range(episode):
             # print(f"cl{cl}")
     
         if done:
-            if s%100:
+            if s%100 == 0 and s != 0:
                 agentoo7.actor.save_weights('.\model_LSTM_6_11_21\ actor_model')
                 agentoo7.critic.save_weights('.\model_LSTM_6_11_21\ critic_model')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\episodes.txt','w')
+                f.write(str(episodes_text + 100))
+                f.close()
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_6_11_21\episodes.txt','r')
+                episodes_text = int(f.read())
+                f.close()
             ep_reward.append(total_reward)
             avg_reward = np.mean(ep_reward[-100:])
             total_avgr.append(avg_reward)
