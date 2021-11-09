@@ -262,7 +262,7 @@ class GamePAI():
         if settings.enemies != []:
             for enemy in settings.enemies:
                 if enemy.minDistance(self.player,enemy.enemyCurrentPossitionX,enemy.enemyCurrentPossitionY) == 0:
-                    self.reward -= 0.1
+                    self.reward -= 1
                 enemy.enemyMovement(self.player)
         if self.playHP:
             self.gameOverHP()
@@ -390,7 +390,7 @@ class GamePAI():
         #This code chunk performs the attack of the player.
             index = self.player.enemyToAttack()
             if index == None:
-                self.reward -= 0.5
+                self.reward -= 1
             if index != None:
                 enemy = settings.enemies[index]
                 boolean = self.player.attack(enemy)
