@@ -6,21 +6,25 @@ import GamePAI
 from tensorflow.keras.layers.experimental import preprocessing
 
 
-featuresCNN1 = 16
-CNN1Shape = 4
-CNN1Step = 2
+featuresCNN1 = 32
+CNN1Shape = 8
+CNN1Step = 4
 featuresCNN2 = 32
-CNN2Shape = 3
-CNN2Step = 3
-denseLayerN = 512
+CNN2Shape = 4
+CNN2Step = 2
+featuresCNN3 = 64
+CNN3Shape = 3
+CNN3Step = 1
+denseLayerN = 256
 denseLayerNL_2 = 32
 denseLayerNL_3= 64
-denseLayerNL_21 = 128
+denseLayerNL_21 = 64
 denseLayerNL_31 = 128
 dropoutRate1 = 0.3
-dropoutRate2 = 0.3
+dropoutRate2 = 0.3 
+h_step = 8
 n_step = 4
-input = (148,148,3)
+screenfactor = 1
 class actor(tf.keras.Model):
     '''This class creates the model of the critic part of the reiforcment learning algorithm'''
     def __init__(self):
@@ -41,7 +45,7 @@ class actor(tf.keras.Model):
         self.l1_3 = tf.keras.layers.Dense(denseLayerNL_3,activation = 'relu')
         self.l1_31 = tf.keras.layers.Dense(denseLayerNL_3,activation = 'relu')
         self.conc = tf.keras.layers.Concatenate(axis=-1)
-        self.add = tf.keras.layers.Add()
+        self.add = tf.keras.layers.Concatenate(axis=-1)
         self.drop = tf.keras.layers.Dropout(0.2)
         #self.conc = tf.keras.layers.concatenate([self.l4,self.l1_2],axis = -1)
         #self.conc3 = tf.keras.layers.concatenate([self.l1_3,self.conc],axis = -1)
