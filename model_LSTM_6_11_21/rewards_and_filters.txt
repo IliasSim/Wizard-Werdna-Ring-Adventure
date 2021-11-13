@@ -36,6 +36,7 @@ win game 10000
 gain hp 1
 gain mp 1
 gamma 0,99
+rewards are not zeroize. Eight steps are inserted at the lstm model. Only the last four are used for the network training (FPS example)
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=5e-6,
         decay_steps=30000,
