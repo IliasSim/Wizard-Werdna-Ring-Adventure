@@ -26,7 +26,8 @@ denseLayerNL_3= 64
 denseLayerNL_21 = 64
 denseLayerNL_31 = 128
 dropoutRate1 = 0.3
-dropoutRate2 = 0.3 
+dropoutRate2 = 0.3
+decay_steps = 10000
 h_step = 8
 n_step = 4
 screenfactor = 1
@@ -75,11 +76,12 @@ class actor(tf.keras.Model):
         return a
 
 class agent():
-    def __init__(self, gamma = 0.99):
+    def __init__(self,initial_learning_rate, gamma = 0.99):
         self.gamma = gamma
+        self.initial_learning_rate = initial_learning_rate
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-5,
-        decay_steps=10000,
+        initial_learning_rate=self.initial_learning_rate,
+        decay_steps=decay_steps,
         decay_rate=0.9)
         self.a_opt = tf.keras.optimizers.Adam(lr_schedule)
         self.c_opt = tf.keras.optimizers.Adam(lr_schedule)
@@ -149,8 +151,12 @@ class agent():
         self.a_opt.apply_gradients(zip(grads1, self.actor.trainable_variables))
         self.c_opt.apply_gradients(zip(grads2, self.critic.trainable_variables))
         return a_loss, c_loss
-
-agentoo7 = agent()
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\steps.txt'):
+    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\steps.txt','r')
+    total_steps = int(f.read())
+    f.close()
+initial_learning_rate = 1e-5*0.9**(total_steps/(h_step*decay_steps))
+agentoo7 = agent(initial_learning_rate)
 if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\episodes.txt'):
     f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\episodes.txt','r')
     episodes_text = int(f.read())
@@ -163,13 +169,15 @@ if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_
     print("critic model is loaded")
     agentoo7.critic.built = True
     agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\ critic_model')
-episode = 10000
+
+episode = 10000 - episodes_text
 ep_reward = []
 total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,screenfactor,True,0,False)
+game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False)
+game_No = episodes_text
 for s in range(episode):
-    game_No = s + 1
+    game_No = game_No + 1
     done = False
     state = game.initialGameState()
     total_reward = 0
@@ -186,6 +194,7 @@ for s in range(episode):
                 sys.exit()
         steps += 1
         action = agentoo7.act(state)
+
         next_state,reward,done  = game.playerAction(action)
         action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
         print(action_name[action],reward,game.cave)
@@ -196,6 +205,7 @@ for s in range(episode):
         actions.append(action)
         state = next_state
         total_reward += reward
+        
         if steps%1000 == 0:
             print(steps,total_reward,action_name[action],game.cave)
 
@@ -238,6 +248,7 @@ for s in range(episode):
             # print(f"cl{cl}")
     
         if done:
+            total_steps = total_steps + steps
             if s%100 == 0 and s != 0:
                 agentoo7.actor.save_weights('.\model_LSTM_image_11_11_21\ actor_model')
                 agentoo7.critic.save_weights('.\model_LSTM_image_11_11_21\ critic_model')
@@ -247,6 +258,10 @@ for s in range(episode):
                 f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\episodes.txt','r')
                 episodes_text = int(f.read())
                 f.close()
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_image_11_11_21\steps.txt','w')
+                f.write(str(total_steps))
+                f.close()
+            print(total_steps,agentoo7.a_opt._decayed_lr(tf.float32))
             ep_reward.append(total_reward)
             avg_reward = np.mean(ep_reward[-100:])
             total_avgr.append(avg_reward)
