@@ -294,6 +294,7 @@ for s in range(episode):
         playerStatus = next_playerStatus
         gameText = next_gameText
         total_reward += reward
+        print(steps,agentoo7.a_opt._decayed_lr(tf.float32))
         if steps%1000 == 0:
             print(steps,total_reward,action_name[action],game.cave)
 
