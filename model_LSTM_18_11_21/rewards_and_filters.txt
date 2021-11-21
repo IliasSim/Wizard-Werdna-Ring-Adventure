@@ -1,0 +1,38 @@
+featuresCNN1 = 32
+CNN1Shape = 3
+CNN1Step = 1
+featuresCNN2 = 8
+CNN2Shape = 5
+CNN2Step = 5
+denseLayerN = 256
+denseLayerNL_2 = 128
+denseLayerNL_3= 128
+denseLayerNL_21 = 512
+denseLayerNL_31 = 512
+h_step = 8
+n_step = 4
+move to new area reward 20
+move to already discovered area 0
+move towards wall area -5
+pick potion 100
+attack an enemy 10
+attack an enemy aimlessly -1
+Kill an enemy 100
+use rest correctly 10
+use rest aimlessly -0,1
+use health potion correctly 10 
+use health potion aimlessly -0,1
+use mana potion correctly 10
+use mana potion aimlessly -0,1
+enter new cave 10000
+pick weapon 100
+pick weapon aimlessly -0,1
+attacked by an enemy -1
+killed by an enemy 
+win game 10000
+gain hp 1
+gain mp 1
+gamma 0,99
+rewards are not zeroize. Eight steps are inserted at the lstm model. Only the last four are used for the network training (FPS example)
+learning_rate=1e-5
+
