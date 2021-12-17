@@ -7,8 +7,6 @@ from Games_items import HelthPotion,ManaPotion,Werdna_Ring,Staff,Sword
 class GameMapGraphics():
     '''The GameMapGraphics class creates the image of game map. 
     Also it creates images of the enemies, the player and the items placed on the map.'''
-    
-
     def __init__(self,screen):
         self.tilesize=4*settings.screenFactor
         self.tilefilsize=11/3*settings.screenFactor
