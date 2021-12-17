@@ -1,9 +1,9 @@
 featuresCNN1 = 32
-CNN1Shape = 4
-CNN1Step = 4
-featuresCNN2 = 32
-CNN2Shape = 2
-CNN2Step = 2
+CNN1Shape = 3
+CNN1Step = 1
+featuresCNN2 = 8
+CNN2Shape = 5
+CNN2Step = 5
 denseLayerN = 256
 denseLayerNL_2 = 128
 denseLayerNL_3= 128
@@ -34,8 +34,5 @@ gain hp 1
 gain mp 1
 gamma 0,99
 rewards are not zeroize. Eight steps are inserted at the lstm model. Only the last four are used for the network training (FPS example)
-lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-5,
-        decay_steps=10000,
-        decay_rate=0.9)
+learning rate stable 1e-5
 
