@@ -9,7 +9,6 @@ denseLayerNL_2 = 32
 denseLayerNL_3= 64
 denseLayerNL_21 = 64
 denseLayerNL_31 = 128
-h_step = 8
 n_step = 4
 move to new area reward 20
 move to already discovered area 0
