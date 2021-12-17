@@ -10,6 +10,7 @@ import gc
 import tensorflow.keras.losses as kls
 from os.path import exists
 import sys
+import matplotlib.pyplot as plt
 
 featuresCNN1 = 32
 CNN1Shape = 4
@@ -115,7 +116,7 @@ class agent():
     
     def act(self,state,playerstatus,gameText):
         prob = self.actor(state,playerstatus,gameText)
-        print(prob)
+        # print(prob)
         prob = prob.numpy()
         dist = tfp.distributions.Categorical(probs=prob, dtype=tf.float32)
         action = dist.sample()
@@ -133,9 +134,9 @@ class agent():
         discnt_rewards.reverse()
         states = np.array(states, dtype=np.float32)
         states =  np.squeeze(states,axis = 1)
-        playerstatus = np.array(playerstatus,dtype=np.int32)
+        playerstatus = np.array(playerstatus,dtype=np.float32)
         playerstatus = np.squeeze(playerstatus,axis=1)
-        gameTexts = np.array(gameTexts,dtype=np.int32)
+        gameTexts = np.array(gameTexts,dtype=np.float32)
         gameTexts = np.squeeze(gameTexts,axis = 1)
         actions = np.array(actions, dtype=np.int32)
         discnt_rewards = np.array(discnt_rewards, dtype=np.float32)
@@ -206,7 +207,7 @@ episode = 10000 - episodes_text
 ep_reward = []
 total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False)
+game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,False)
 game_No = episodes_text
 for s in range(episode):
     game_No = game_No + 1   
@@ -231,9 +232,9 @@ for s in range(episode):
 
         next_state,reward, next_playerStatus, next_gameText,done  = game.playerAction(action)
         action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
-        print(action_name[action],reward,game.cave)
+        print(steps,action_name[action],reward,game.cave)
         if done:
-            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
         rewards.append(reward)
         states.append(state)
         playerstatus.append(playerStatus)
@@ -251,10 +252,10 @@ for s in range(episode):
             if steps >= 2000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
@@ -262,10 +263,10 @@ for s in range(episode):
             if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
