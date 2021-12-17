@@ -18,7 +18,10 @@ eps = np.finfo(np.float32).eps.item()
 
 class GamePAI():
     '''GamePAi is a class that creates an instance of the game and initialize the basic features of the game.'''
-    def __init__(self,playerType,playerName,xPixel,yPixel,screenFactor,depict,game,playHP):
+    def __init__(self,playerType,playerName,xPixel,yPixel,screenFactor,depict,game,playHP,seeded):
+        self.seed = game
+        self.additemRandom = game
+        self.seeded = seeded
         self.playHP = playHP
         self.xPixel = xPixel
         self.yPixel = yPixel
@@ -31,6 +34,7 @@ class GamePAI():
         self.playerName = playerName
         self.total_reward = []
         self.buffer_size = 7
+        self.killNo = 0
         settings.screenFactor = screenFactor
         settings.mapWidth = int(self.xPixel/3)*screenFactor
         settings.mapHeigth = int(self.yPixel/3)*screenFactor
@@ -43,6 +47,7 @@ class GamePAI():
         self.depict = depict
         self.steps = 0
         self.reward = 0
+        self.rest = 0
         #random.seed(seed)
         #if self.screenFactor == 3:
         if depict == True:
@@ -55,7 +60,7 @@ class GamePAI():
             #if depict == False:
                 #self.screen = pygame.Surface((settings.mapWidth+32, settings.mapHeigth+24))
         self.DrawMap = GameMapGraphics(self.screen)
-        self.map = GameMap()
+        self.map = GameMap(self.seeded,self.seed)
         pygame.init()         
         if not self.playHP:
             settings.enemies = []
@@ -182,10 +187,21 @@ class GamePAI():
         '''Creates the map of the game.'''
         precentage = 0
         makemap = True 
-        while makemap:
-            precentage = random.random()
-            if 0.35 < precentage <= 0.55:
-                makemap = False
+        if self.seeded:
+            seed = self.seed + cave*10000
+            while makemap:
+                random.seed(seed)
+                precentage = random.random()
+                # print(seed,precentage)
+                if 0.35 < precentage <= 0.55:
+                    makemap = False
+                else:
+                    seed += 1
+        else:
+            while makemap:
+                precentage = random.random()
+                if 0.35 < precentage <= 0.55:
+                    makemap = False
         if cave >= 0:
             self.map.refreshTilesSettings()
         self.map.MakeMAp(precentage, self.player, cave)
@@ -291,13 +307,14 @@ class GamePAI():
             unknownTille = self.map.countUknownTile()
             self.player.playerMovement(movementType)
             if Xposition != self.player.currentPositionX or Yposition != self.player.currentPositionY:
+                self.steps += 1
                 if unknownTille > self.map.countUknownTile():
                     self.reward += 20
                 else:
                     self.reward -= 0
                 if len(self.player.inventory) > inventory:
                     self.reward += 100
-                self.map.createEnemies(self.player,movementType)
+                self.map.createEnemies(self.player,movementType,self.steps)
                 self.enemyMove()
                 self.enterCave(self.cave)
                 self.afterMoveDepiction()
@@ -310,16 +327,17 @@ class GamePAI():
         if action == 4:
         #This code chunk adds 4 points to the hp of the player and if the player is wizzard type, adds and 4 point the mp of the player.'''
             oldhitpoints = self.player.hitPoints
+            self.rest += 1
             if isinstance(self.player, Wizard):
                 oldmanapoints = self.player.manaPoints
             if settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.visible and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.fogged:
                 self.player.rest()
-                self.map.createEnemiesRest(self.player)
+                self.map.createEnemiesRest(self.player,self.rest)
                 self.enemyMove()
                 self.afterMoveDepiction()
             if  (abs(settings.exitx - self.player.currentPositionX) + abs(settings.exity - self.player.currentPositionY)) > 35 and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.unknown:
                 self.player.rest()
-                self.map.createEnemiesRest(self.player)
+                self.map.createEnemiesRest(self.player,self.rest)
                 self.enemyMove()
                 self.afterMoveDepiction()
             if (abs(settings.exitx - self.player.currentPositionX) + abs(settings.exity - self.player.currentPositionY)) < 35 and settings.tiles[settings.exitx][settings.exity].visibility != GameEnum.VisibilityType.unknown:
@@ -397,9 +415,14 @@ class GamePAI():
                 if boolean:
                     self.reward += 10
                 if boolean and enemy.hitPoints <= 0:
+                    self.killNo += 1
+                    self.additemRandom += 100
                     self.reward += 100
-                    if random.random() <= 0.25:
-                        self.map.addItem(self.player, enemy.enemyCurrentPossitionX, enemy.enemyCurrentPossitionY)
+                    if self.seeded:
+                        random.seed(self.additemRandom)
+                    r = random.random()
+                    if r <= 0.25:
+                        self.map.addItem(self.player, enemy.enemyCurrentPossitionX, enemy.enemyCurrentPossitionY,self.cave,self.killNo)
                 if boolean and enemy.hitPoints <= 0 and self.player.experiencePoints <= 13999:
                     settings.tiles[enemy.enemyCurrentPossitionX][enemy.enemyCurrentPossitionY].occupancy = False
                     settings.enemies.pop(index)
@@ -683,4 +706,4 @@ class GamePAI():
 
 
 # if __name__ == '__main__':
-    # game = GamePAI(1,'Connan',444,444,2,True,0,True)
+    # game = GamePAI(1,'Connan',444,444,2,True,0,True,True)
