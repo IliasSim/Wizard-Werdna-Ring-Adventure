@@ -9,8 +9,9 @@ from Enemy import Enemy
 
 class GameMap():
     '''The GameMap class create the game map. Also it creates the enemies and the items to be placed on the map.'''
-    #def __init__(self,seed):
-        #random.seed(seed)
+    def __init__(self,seeded,seed):
+        self.seed = seed
+        self.seeded = seeded
     def refreshTilesSettings(self):
         '''Reset the values of the tiles to their initial price.'''
         for y in range(settings.ytile):
@@ -30,8 +31,11 @@ class GameMap():
     
     def MakeMAp(self,precentage,player,caveNo):
         '''Characterizes the tile of the map as floor or wall and sets the initial visibility to unknown, except for the region the player'''
+        if self.seeded:
+            random.seed(self.seed + caveNo*1000)
         settings.startX = random.randint(0, settings.xtile - 1)
         settings.startY = random.randint(0, settings.ytile -1)
+        # print(self.seed + caveNo*500,settings.startX,settings.startY)
         m = settings.startX
         n = settings.startY
         player.currentPositionX = m
@@ -67,7 +71,7 @@ class GameMap():
                 settings.tiles[m][n].ground = GameEnum.GroundType.floor
                 
         self.MapExit(caveNo)
-        self.addItems(player)
+        self.addItems(player,caveNo)
         settings.countfloortile = 0
 
     def MapExit(self,caveNo):
@@ -89,20 +93,26 @@ class GameMap():
         else:    
             settings.tiles[settings.exitx][settings.exity].ground = GameEnum.GroundType.stairs
 
-    def addItem(self,player,x,y):
+    def addItem(self,player,x,y,caveNo,killno):
         '''Adds item at the map when an enemy killed.'''
+        if self.seeded:
+            random.seed(self.seed + 3999 + caveNo + killno)
         if settings.tiles[x][y].store == None:
-            if random.random()<=0.25:
-                settings.tiles[x][y].store = self.weaponGenerator(player)
+            r1 = random.random()
+            # print(r1,1,self.seed + 3999 + caveNo + killno)
+            if r1 <=0.25:
+                settings.tiles[x][y].store = self.weaponGenerator(player,killno)
             else:
                 store = None
-                if random.random() <= 0.5:
+                r2 = random.random()
+                # print(r2,2,self.seed + 3999 + caveNo + killno)
+                if r2 <= 0.5:
                     store = HelthPotion()
                 else:
                     store = ManaPotion()
                 settings.tiles[x][y].store = store
 
-    def addItems(self,player):
+    def addItems(self,player,caveNo):
         '''Adds items at the creation of the map.'''
         items = 0
         store = None
@@ -116,6 +126,8 @@ class GameMap():
         if len(floorTile)/(settings.xtile*settings.ytile)>0.4:
             items = 10
         for i in range(items):
+            if self.seeded:
+                random.seed(self.seed + caveNo*i + 4999)
             if random.random() <= 0.5:
                 store = HelthPotion()
             else:
@@ -127,14 +139,18 @@ class GameMap():
         if len(floorTile)/(settings.xtile*settings.ytile)>0.4:
             items = 2
         for i in range(items):
+            if self.seeded:
+                random.seed(self.seed + caveNo*i + 5999)
             store_place = floorTile[random.randint(0,len(floorTile)-1)]
-            self.weaponGenerator(player)
-            settings.tiles[store_place[0]][store_place[1]].store = self.weaponGenerator(player)
+            # self.weaponGenerator(player,caveNo)
+            settings.tiles[store_place[0]][store_place[1]].store = self.weaponGenerator(player,caveNo)
             
 
-    def weaponGenerator(self,player):
+    def weaponGenerator(self,player,seedCH):
         '''Generates weapon to be placed at the creation of the map or after the death of an enemy
 	    The item effect of the weapon depends on the player level.'''
+        if self.seeded:
+            random.seed(self.seed + seedCH*1000 + 5999)
         hpboostwar,hpboostwiz,manaboost,strenghtboost,intboost,totalboost = 0,0,0,0,0,0
         level = player.getLevel()
         adjective = None
@@ -198,11 +214,14 @@ class GameMap():
             distances.append(enemy.enemyDistance(player))
         return settings.enemies[distances.index(min(distances))]
 
-    def createEnemies(self,player,type):
+    def createEnemies(self,player,type,steps):
         '''Creates the enemy of the game. The enemy created after a player move.'''
         if len(settings.enemies) < 20:
+            if self.seeded:
+                random.seed(self.seed + 6999 + steps*15)
             p0 = random.uniform(0.1, 0.25)
             p = 2*p0/math.exp(player.getMaxLevelHitpoints(player.getLevel())/player.hitPoints)
+            # print(p)
             if p < 0.10:
                 p = 0.10
             self.enemy = None
@@ -327,9 +346,11 @@ class GameMap():
                 player.playerHearing(self.enemy)
                         
 
-    def createEnemiesRest(self,player):
+    def createEnemiesRest(self,player,rest):
         if len(settings.enemies) < 20:
             p = 0.45
+            if self.seeded:
+                random.seed(self.seed + 5999 + rest*5)
             self.enemy = None
             if random.random() < p:
                 pe = random.random()
