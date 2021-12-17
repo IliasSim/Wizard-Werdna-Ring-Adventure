@@ -1,19 +1,17 @@
 featuresCNN1 = 32
-CNN1Shape = 8
+CNN1Shape = 4
 CNN1Step = 4
 featuresCNN2 = 32
-CNN2Shape = 4
-CNN2Step = 2
-featuresCNN3 = 64
 CNN3Shape = 3
 CNN3Step = 1
 denseLayerN = 256
 denseLayerNL_2 = 32
 denseLayerNL_3= 64
 denseLayerNL_21 = 64
-denseLayerNL_31 = 128
-h_step = 8
+denseLayerNL_31 = 128 
 n_step = 4
+screenfactor = 1
+decay_steps = 10000
 move to new area reward 20
 move to already discovered area 0
 move towards wall area -5
