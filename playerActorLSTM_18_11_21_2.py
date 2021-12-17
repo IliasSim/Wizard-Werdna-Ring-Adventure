@@ -14,19 +14,17 @@ import sys
 featuresCNN1 = 32
 CNN1Shape = 3
 CNN1Step = 1
-featuresCNN2 = 8
+featuresCNN2 = 16
 CNN2Shape = 5
-CNN2Step = 5
+CNN2Step = 2
 featuresCNN3 = 8
 CNN3Shape = 10
-CNN3Step = 4
+CNN3Step = 5
 denseLayerN = 256
 denseLayerNL_2 = 128
 denseLayerNL_3= 128
 denseLayerNL_21 = 512
 denseLayerNL_31 = 512
-dropoutRate1 = 0.3
-dropoutRate2 = 0.3 
 h_step = 8
 n_step = 4
 screenfactor = 1
@@ -43,8 +41,8 @@ class critic(tf.keras.Model):
         super().__init__()
         self.l1 = tf.keras.layers.Conv3D(featuresCNN1,(1,CNN1Shape,CNN1Shape),(1,CNN1Step,CNN1Step),activation = 'relu')
         self.l2 = tf.keras.layers.Conv3D(featuresCNN2,(1,CNN2Shape,CNN2Shape),(1,CNN2Step,CNN2Step),activation = 'relu')
-        # self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
-        self.l4 = tf.keras.layers.Reshape((h_step,6728))
+        self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
+        self.l4 = tf.keras.layers.Reshape((h_step,1352))
         self.l5 = tf.keras.layers.LSTM(denseLayerN)
         self.l6 = tf.keras.layers.Dense(denseLayerNL_2,activation = 'relu')
         self.l7 = tf.keras.layers.LSTM(denseLayerNL_21)
@@ -58,7 +56,7 @@ class critic(tf.keras.Model):
     def call(self,input_data,input_data1,input_data2):
         x = self.l1(input_data)
         x = self.l2(x)
-        # x = self.l3(x)
+        x = self.l3(x)
         x = self.l4(x)
         x= self.l5(x)
         y = self.l6(input_data1)
@@ -76,8 +74,8 @@ class actor(tf.keras.Model):
         super().__init__()
         self.l1 = tf.keras.layers.Conv3D(featuresCNN1,(1,CNN1Shape,CNN1Shape),(1,CNN1Step,CNN1Step),activation = 'relu')
         self.l2 = tf.keras.layers.Conv3D(featuresCNN2,(1,CNN2Shape,CNN2Shape),(1,CNN2Step,CNN2Step),activation = 'relu')
-        # self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
-        self.l4 = tf.keras.layers.Reshape((h_step,6728))
+        self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
+        self.l4 = tf.keras.layers.Reshape((h_step,1352))
         self.l5 = tf.keras.layers.LSTM(denseLayerN)
         self.l6 = tf.keras.layers.Dense(denseLayerNL_2,activation = 'relu')
         self.l7 = tf.keras.layers.LSTM(denseLayerNL_21)
@@ -91,11 +89,14 @@ class actor(tf.keras.Model):
     def call(self,input_data,input_data1,input_data2):
         x = self.l1(input_data)
         x = self.l2(x)
-        # x = self.l3(x)
+        x = self.l3(x)
         x = self.l4(x)
         x= self.l5(x)
+        print(input_data1)
         y = self.l6(input_data1)
+        print(y.shape)
         y = self.l7(y)
+        print(y.shape)
         z = self.l8(input_data2)
         z = self.l9(z)
         h = self.conc1((y,z))
@@ -106,13 +107,8 @@ class actor(tf.keras.Model):
 class agent():
     def __init__(self, gamma = 0.99):
         self.gamma = gamma
-        # self.initial_learning_rate = initial_learning_rate
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-5,
-        decay_steps=decay_steps,
-        decay_rate=0.9)
-        self.a_opt = tf.keras.optimizers.Adam(lr_schedule)
-        self.c_opt = tf.keras.optimizers.Adam(lr_schedule)
+        self.a_opt = tf.keras.optimizers.Adam(1e-5)
+        self.c_opt = tf.keras.optimizers.Adam(1e-5)
         self.actor = actor()
         self.critic = critic()
         self.log_prob = None
@@ -142,6 +138,7 @@ class agent():
         gameTexts = np.squeeze(gameTexts,axis = 1)
         actions = np.array(actions, dtype=np.int32)
         discnt_rewards = np.array(discnt_rewards, dtype=np.float32)
+        print(gameTexts.shape,playerstatus.shape,states.shape)
         return states,playerstatus,gameTexts, actions, discnt_rewards
 
     def actor_loss(self, probs, actions, td): 
@@ -186,11 +183,6 @@ class agent():
         self.c_opt.apply_gradients(zip(grads2, self.critic.trainable_variables))
         return a_loss, c_loss
 
-# if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_18_11_21_2\steps.txt'):
-    # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_18_11_21_2\steps.txt','r')
-    # total_steps = int(f.read())
-    # f.close()
-# initial_learning_rate = 1e-5*0.9**(total_steps/(n_step*decay_steps))
 agentoo7 = agent()
 if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_18_11_21_2\episodes.txt'):
     f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_18_11_21_2\episodes.txt','r')
@@ -208,7 +200,7 @@ episode = 10000 - episodes_text
 ep_reward = []
 total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False)
+game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,False)
 game_No = episodes_text
 for s in range(episode):
     game_No = game_No + 1
@@ -234,7 +226,7 @@ for s in range(episode):
         action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
         print(action_name[action],reward,game.cave)
         if done:
-            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
         rewards.append(reward)
         states.append(state)
         playerstatus.append(playerStatus)
@@ -251,10 +243,10 @@ for s in range(episode):
             if steps >= 2000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
@@ -262,10 +254,10 @@ for s in range(episode):
             if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
@@ -290,7 +282,6 @@ for s in range(episode):
             # print(f"cl{cl}")
     
         if done:
-            # total_steps = total_steps + steps
             if s%100 == 0 and s != 0:
                 agentoo7.actor.save_weights('.\model_LSTM_18_11_21_2\ actor_model')
                 agentoo7.critic.save_weights('.\model_LSTM_18_11_21_2\ critic_model')
@@ -300,10 +291,6 @@ for s in range(episode):
                 f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_18_11_21_2\episodes.txt','r')
                 episodes_text = int(f.read())
                 f.close()
-                # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_18_11_21_2\steps.txt','w')
-                # f.write(str(total_steps))
-                # f.close()
-             #print(total_steps,agentoo7.a_opt._decayed_lr(tf.float32))
             ep_reward.append(total_reward)
             avg_reward = np.mean(ep_reward[-100:])
             total_avgr.append(avg_reward)
