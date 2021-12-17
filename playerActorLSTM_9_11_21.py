@@ -17,16 +17,11 @@ CNN1Step = 4
 featuresCNN2 = 32
 CNN2Shape = 2
 CNN2Step = 2
-featuresCNN3 = 64
-CNN3Shape = 3
-CNN3Step = 1
 denseLayerN = 256
 denseLayerNL_2 = 32
 denseLayerNL_3= 64
 denseLayerNL_21 = 64
 denseLayerNL_31 = 128
-dropoutRate1 = 0.3
-dropoutRate2 = 0.3 
 h_step = 8
 n_step = 4
 screenfactor = 1
@@ -204,7 +199,7 @@ episode = 10000 - episodes_text
 ep_reward = []
 total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False)
+game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,False)
 game_No = episodes_text
 for s in range(episode):
     game_No = game_No + 1
@@ -230,7 +225,7 @@ for s in range(episode):
         action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
         print(action_name[action],reward,game.cave)
         if done:
-            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
         rewards.append(reward)
         states.append(state)
         playerstatus.append(playerStatus)
@@ -247,10 +242,10 @@ for s in range(episode):
             if steps >= 2000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
@@ -258,10 +253,10 @@ for s in range(episode):
             if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,False)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
@@ -276,7 +271,7 @@ for s in range(episode):
                 discnt_rewards = discnt_rewards[-n_step:]
             if states.shape[0] <= n_step:
                 discnt_rewards = discnt_rewards[-states.shape[0]:]
-            al,cl = agentoo7.learn(states,playerstatus,gameTexts, actions, discnt_rewards) 
+            al,cl = agentoo7.learn(states,playerstatus,gameTexts, actions, discnt_rewards)
             states = []
             playerstatus = []
             gameTexts = []
