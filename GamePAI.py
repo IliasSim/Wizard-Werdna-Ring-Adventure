@@ -26,14 +26,11 @@ class GamePAI():
         self.xPixel = xPixel
         self.yPixel = yPixel
         self.screenFactor = screenFactor
-        self.buffer_State = []
-        self.buffer_playerStatus = []
-        self.buffer_text = []
         self.cave = 0
         self.playerType = playerType
         self.playerName = playerName
         self.total_reward = []
-        self.buffer_size = 7
+        self.buffer_size = 15
         self.killNo = 0
         settings.screenFactor = screenFactor
         settings.mapWidth = int(self.xPixel/3)*screenFactor
@@ -499,30 +496,30 @@ class GamePAI():
         textArray = self.gameVocab(textList)
         #reward = self.standardize_reward(self.reward)
         # if len(self.buffer_playerStatus) > self.buffer_size:
-            # self.buffer_playerStatus = []
+            # del self.buffer_playerStatus[0]
         # if len(self.buffer_playerStatus)<=self.buffer_size:
             # for i in range(3-len(self.buffer_playerStatus)):
                 # self.buffer_playerStatus.append(playerstatus)
-        self.buffer_playerStatus.append(playerstatus)
+        # self.buffer_playerStatus.append(playerstatus)
         # array_playerStatus = np.array(self.buffer_playerStatus)
         # print(array_playerStatus.shape)
         # array_playerStatus = np.expand_dims(array_playerStatus, axis=0)
 
         # if len(self.buffer_State) > self.buffer_size:
-            # self.buffer_State = []
+            # del self.buffer_State[0]
         # if len(self.buffer_State)<=self.buffer_size:
             # for i in range(self.buffer_size-len(self.buffer_State)):
                 # self.buffer_State.append(state)
-        self.buffer_State.append(state)
+        # self.buffer_State.append(state)
         # array_state = np.array(self.buffer_State)
         # array_state = np.expand_dims(array_state, axis=0)
 
         # if len(self.buffer_text) > self.buffer_size:
-            # self.buffer_text = []
+            # del self.buffer_text[0]
         # if len(self.buffer_text)<=self.buffer_size:
             # for i in range(3-len(self.buffer_text)):
                 # self.buffer_text.append(textArray)
-        self.buffer_text.append(textArray)
+        # self.buffer_text.append(textArray)
         # array_text = np.array(self.buffer_text)
         # array_text = np.expand_dims(array_text, axis=0)
         done = False
@@ -534,8 +531,13 @@ class GamePAI():
             if initialManaPoints < self.player.manaPoints:
                 self.reward += 1
         # print(np.array(self.buffer_text).shape)
-        print(len(self.buffer_State))
-        return self.buffer_playerStatus, self.reward, self.buffer_playerStatus,  self.buffer_text, done
+        # if len(self.buffer_reward) > self.buffer_size:
+            # del self.buffer_reward[0]
+        # print(self.reward)
+        # self.buffer_reward.append(self.reward)
+        # print(self.buffer_reward[len(self.buffer_reward)-1])
+        # print(self.buffer_reward)
+        return state, self.reward, playerstatus,  textArray, done
 
     def gameVocab(self,textList):
         array = np.array([])
@@ -690,26 +692,26 @@ class GamePAI():
         # if len(self.buffer_playerStatus)<=self.buffer_size:
             # for i in range(self.buffer_size-len(self.buffer_playerStatus)):
                 # self.buffer_playerStatus.append(playerstatus)
-        self.buffer_playerStatus.append(playerstatus)
+        # self.buffer_playerStatus.append(playerstatus)
         # array_playerStatus = np.array(self.buffer_playerStatus)
         # array_playerStatus = np.expand_dims(array_playerStatus, axis=0)
         # if len(self.buffer_State)<=self.buffer_size:
             # for i in range(self.buffer_size-len(self.buffer_State)):
                 # self.buffer_State.append(state)
-        self.buffer_State.append(state)
+        # self.buffer_State.append(state)
         # array_state = np.array(self.buffer_State)
         # array_state = np.expand_dims(array_state, axis=0)
 
         # if len(self.buffer_text)<=self.buffer_size:
             # for i in range(self.buffer_size-len(self.buffer_text)):
                 # self.buffer_text.append(textArray)
-        self.buffer_text.append(textArray)
+        # self.buffer_text.append(textArray)
         # array_text = np.array(self.buffer_text)
         # array_text = np.expand_dims(array_text, axis=0)
 
         
         #textArray = np.expand_dims(textArray, axis=0)
-        return self.buffer_State, self.buffer_playerStatus, self.buffer_text
+        return state, playerstatus, textArray
 
 
 
