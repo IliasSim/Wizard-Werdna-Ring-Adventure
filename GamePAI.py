@@ -175,8 +175,8 @@ class GamePAI():
         self.DrawMap.drawItem()
         self.DrawMap.enemyDepiction()
         self.DrawMap.drawPlayer(self.player.currentPositionX, self.player.currentPositionY)
-        # FramePerSec = pygame.time.Clock()
-        # FramePerSec.tick(30)
+        FramePerSec = pygame.time.Clock()
+        FramePerSec.tick(5)
         if self.depict == True:
             pygame.display.update()
 
@@ -537,7 +537,7 @@ class GamePAI():
         # self.buffer_reward.append(self.reward)
         # print(self.buffer_reward[len(self.buffer_reward)-1])
         # print(self.buffer_reward)
-        return state, self.reward, playerstatus,  textArray, done
+        return state, playerstatus,  textArray, self.reward, done
 
     def gameVocab(self,textList):
         array = np.array([])
