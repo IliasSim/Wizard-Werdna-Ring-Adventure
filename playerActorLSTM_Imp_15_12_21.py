@@ -11,6 +11,8 @@ import gc
 import tensorflow.keras.losses as kls
 from os.path import exists
 import sys
+import random
+
 
 featuresCNN1 = 32
 CNN1Shape = 3
@@ -25,15 +27,16 @@ CNN3Step = 5
 denseLayerN = 256
 denseLayerNL_2 = 32
 denseLayerNL_3= 64
-denseLayerNL_21 = 64
-denseLayerNL_31 = 128 
-h_step = 8
+denseLayerNL_21 = 128
+denseLayerNL_31 = 256 
+h_step = 4
 n_step = 4
 screenfactor = 1
 decay_steps = 10000
-seeded = True
+seeded = False
 input = (148,148,3)
 record = False
+memory_size = 100000
 physical_devices = tf.config.list_physical_devices('GPU')
 try:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -45,8 +48,8 @@ class critic(tf.keras.Model):
         super().__init__()
         self.l1 = tf.keras.layers.Conv3D(featuresCNN1,(1,CNN1Shape,CNN1Shape),(1,CNN1Step,CNN1Step),activation = 'relu')
         self.l2 = tf.keras.layers.Conv3D(featuresCNN2,(1,CNN2Shape,CNN2Shape),(1,CNN2Step,CNN2Step),activation = 'relu')
-        # self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
-        self.l4 = tf.keras.layers.Reshape((-1,161312))
+        self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
+        self.l4 = tf.keras.layers.Reshape((-1,2704))
         self.l5 = tf.keras.layers.LSTM(denseLayerN)
         # self.l6 = tf.keras.layers.Dense(denseLayerNL_2,activation = 'relu')
         self.l7 = tf.keras.layers.LSTM(denseLayerNL_21)
@@ -60,7 +63,7 @@ class critic(tf.keras.Model):
     def call(self,input_data,input_data1,input_data2):
         x = self.l1(input_data)
         x = self.l2(x)
-        # x = self.l3(x)
+        x = self.l3(x)
         x = self.l4(x)
         x= self.l5(x)
         # y = self.l6(input_data1)
@@ -78,8 +81,8 @@ class actor(tf.keras.Model):
         super().__init__()
         self.l1 = tf.keras.layers.Conv3D(featuresCNN1,(1,CNN1Shape,CNN1Shape),(1,CNN1Step,CNN1Step),activation = 'relu')
         self.l2 = tf.keras.layers.Conv3D(featuresCNN2,(1,CNN2Shape,CNN2Shape),(1,CNN2Step,CNN2Step),activation = 'relu')
-        # self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
-        self.l4 = tf.keras.layers.Reshape((-1,161312))
+        self.l3 = tf.keras.layers.Conv3D(featuresCNN3,(1,CNN3Shape,CNN3Shape),(1,CNN3Step,CNN3Step),activation = 'relu')
+        self.l4 = tf.keras.layers.Reshape((-1,2704))
         self.l5 = tf.keras.layers.LSTM(denseLayerN)
         # self.l6 = tf.keras.layers.Dense(denseLayerNL_2,activation = 'relu')
         self.l7 = tf.keras.layers.LSTM(denseLayerNL_21)
@@ -93,7 +96,7 @@ class actor(tf.keras.Model):
     def call(self,input_data,input_data1,input_data2):
         x = self.l1(input_data)
         x = self.l2(x)
-        # x= self.l3(x)
+        x= self.l3(x)
         x = self.l4(x)
         x= self.l5(x)
         # y = self.l6(input_data1)
@@ -106,15 +109,15 @@ class actor(tf.keras.Model):
         return a
 
 class agent():
-    def __init__(self,initial_learning_rate, gamma = 0.99):
+    def __init__(self, gamma = 0.99):
         self.gamma = gamma
-        self.initial_learning_rate = initial_learning_rate
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=self.initial_learning_rate,
-        decay_steps=decay_steps,
-        decay_rate=0.9)
-        self.a_opt = tf.keras.optimizers.Adam(lr_schedule)
-        self.c_opt = tf.keras.optimizers.Adam(lr_schedule)
+        # self.initial_learning_rate = initial_learning_rate
+        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        # initial_learning_rate=self.initial_learning_rate,
+        # decay_steps=decay_steps,
+        # decay_rate=0.9)
+        self.a_opt = tf.keras.optimizers.Adam(learning_rate=5e-6)
+        self.c_opt = tf.keras.optimizers.Adam(learning_rate=5e-6)
         self.actor = actor()
         self.critic = critic()
         self.log_prob = None
@@ -122,7 +125,8 @@ class agent():
         self.buffer_playerStatus = []
         self.buffer_text = []
         self.buffer_reward = []
-        self.buffer_size = 7
+        self.buffer_size = h_step
+        # self.final_discnt_rewards = []
 
     def act(self,state,playerstatus,gameText):
         prob = self.actor(state,playerstatus,gameText)
@@ -132,44 +136,63 @@ class agent():
         action = dist.sample()
         return int(action.numpy()[0])
 
-    def preprocess0(self, state,playerstatus,gameText):
-        if len(self.buffer_State) > self.buffer_size:
+    def preprocess0(self, state,playerstatus,gameText,rewards, gamma):
+        # discnt_rewards = []
+        sum_reward = 0        
+        rewards.reverse()
+        for r in rewards:
+            sum_reward = r + gamma*sum_reward
+            # discnt_rewards.append(sum_reward)
+        rewards.reverse()
+        # discnt_rewards.reverse()
+        
+        # if rewards == []:
+            # discnt_rewards.append(0)
+        
+        if len(self.buffer_State) >= self.buffer_size:
             del self.buffer_State[0]
         self.buffer_State.append(state)
         state = np.array(self.buffer_State)
         state = np.expand_dims(state, axis=0)
 
-        if len(self.buffer_playerStatus) > self.buffer_size:
+        if len(self.buffer_playerStatus) >= self.buffer_size:
             del self.buffer_playerStatus[0]
         self.buffer_playerStatus.append(playerstatus)
         playerstatus = np.array(self.buffer_playerStatus, dtype=np.float32)
         playerstatus = np.expand_dims(playerstatus, axis=0)
 
-        if len(self.buffer_text) > self.buffer_size:
+        if len(self.buffer_text) >= self.buffer_size:
             del self.buffer_text[0]
         self.buffer_text.append(gameText)
         gameText = np.array(self.buffer_text, dtype=np.float32)
         gameText = np.expand_dims(gameText, axis=0)    
         # print(state.shape,playerstatus.shape)
-        return state,playerstatus,gameText
+        return state,playerstatus,gameText,sum_reward
 
-    def preprocess1(self, state,playerstatus,gameText, rewards, gamma):
+    def preprocess1(self,batch):
+        state = []
+        playerstatus = []
+        gameText = []
         discnt_rewards = []
-        sum_reward = 0        
-        rewards.reverse()
-        for r in rewards:
-            sum_reward = r + gamma*sum_reward
-            discnt_rewards.append(sum_reward)
-        rewards.reverse()
-        discnt_rewards.reverse()
-        discnt_rewards = discnt_rewards[-n_step:]
+        actions = []
+        for i in range(n_step):
+            state.append(batch[i][0])
+            # print(batch[i][0].shape)
         state = np.array(state)
         state =  np.squeeze(state,axis = 1)
+        for i in range(n_step):
+            playerstatus.append(batch[i][1])
         playerstatus = np.array(playerstatus)
         playerstatus =  np.squeeze(playerstatus,axis = 1)
+        for i in range(n_step):
+            gameText.append(batch[i][2])
         gameText = np.array(gameText)
         gameText =  np.squeeze(gameText,axis = 1)
-        return  state,playerstatus,gameText,discnt_rewards
+        for i in range(n_step):
+            discnt_rewards.append(batch[i][3])
+        for i in range(n_step):
+            actions.append(batch[i][4])
+        return  state,playerstatus,gameText,discnt_rewards,actions
 
     def actor_loss(self, probs, actions, td): 
         probability = []
@@ -180,7 +203,6 @@ class agent():
         prob = dist.prob(actions)
         probability.append(prob)
         log_probability.append(log_prob)
-
         p_loss= []
         e_loss = []
         td = td.numpy()
@@ -197,11 +219,13 @@ class agent():
         loss = -p_loss - 0.0001 * e_loss
         return loss
 
-    def learn(self, states,playerstatus,gameTexts, actions, discnt_rewards):
+    def learn(self, states,playerstatus,gameTexts, discnt_rewards,actions):
         discnt_rewards = tf.reshape(discnt_rewards, (len(discnt_rewards),))
+        # print(discnt_rewards)
         # print(states.shape,playerstatus.shape,gameTexts.shape)
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
             p = self.actor(states,playerstatus,gameTexts, training=True)
+            # print(p)
             # print(states.shape,playerstatus.shape,gameTexts.shape,p)
             v =  self.critic(states,playerstatus,gameTexts,training=True)
             v = tf.reshape(v, (len(v),))
@@ -232,18 +256,67 @@ class agent():
                 plt.show()
         return a_loss, c_loss
 
+
+class replay():
+    def __init__(self,memory_size):
+        self.memory_size = memory_size
+        self.replay_buffer = []
+
+    def take_batch(self,batch_size):
+        batch_start_boolean = True
+        if len(self.replay_buffer) >= batch_size:
+            while batch_start_boolean:
+                batch_start = random.randint(0,len(self.replay_buffer)-1)
+                if len(self.replay_buffer) - batch_start >= batch_size:
+                    batch_start_boolean = False
+        # print(len(self.replay_buffer[batch_start:(batch_start+batch_size)]))   
+        return self.replay_buffer[batch_start:(batch_start+batch_size)]
+
+    def write_memory(self,memory):
+        if  len(self.replay_buffer) >= self.memory_size:
+            del self.replay_buffer[0]
+        self.replay_buffer.append(memory)
+    
+    def create_memory(self,state,playerStatus, gameText, discnt_rewards,action):
+        memory = []
+        memory.append(state)
+        memory.append(playerStatus)
+        memory.append(gameText)
+        memory.append(discnt_rewards)
+        memory.append(action)
+        self.write_memory(memory)
+
+    # def create_hidden_State(self,state,playerStatus, gameText, discnt_rewards,action):
+        # if len(self.train_playerstatus) >= n_step:
+            # self.train_actions = []
+            # self.train_states = []
+            # self.train_playerstatus = []
+            # self.train_gametexts = []
+            # self.train_discnt_rewards = []
+        # self.train_actions.append(action)
+        # self.train_states.append(state)
+        # self.train_playerstatus.append(playerStatus)
+        # self.train_gametexts.append(gameText)
+        # self.train_discnt_rewards.append(discnt_rewards)
+        # return self.train_states, self.train_playerstatus, self.train_gametexts, self.train_discnt_rewards, self.train_actions
+        
+        
+
+
+# tf.random.set_seed(39999)
 if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\steps.txt'):
     f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\steps.txt','r')
     total_steps = int(f.read())
     f.close()
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt'):
-    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','r')
-    initial_learning_rate = float(f.read())
-    f.close()
+# if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt'):
+    # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','r')
+    # initial_learning_rate = float(f.read())
+    # f.close()
 # initial_learning_rate = 1e-5*0.9**(total_steps/(h_step*decay_steps))
-if initial_learning_rate == 0:
-    initial_learning_rate = 1e-5
-agentoo7 = agent(initial_learning_rate)
+# if initial_learning_rate == 0:
+    # initial_learning_rate = 1e-5
+agentoo7 = agent()
+replay_memory = replay(memory_size)
 f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\episodes.txt','r')
 episodes_text = int(f.read())
 f.close()
@@ -259,6 +332,7 @@ episode = 10000 - episodes_text
 ep_reward = []
 total_avgr = []
 dfrewards = []
+# observation = []
 game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded)
 game_No = episodes_text
 for s in range(episode):
@@ -266,16 +340,12 @@ for s in range(episode):
     done = False
     state,playerStatus, gameText = game.initialGameState()
     # print(state.shape)
-    state,playerStatus, gameText = agentoo7.preprocess0(state,playerStatus, gameText)
-    total_reward = 0
     rewards = []
-    train_actions = []
-    train_states = []
-    train_playerstatus = []
-    train_gametexts = []
+    # state,playerStatus, gameText, discnt_rewards  = agentoo7.preprocess0(state,playerStatus, gameText,rewards,0.99)
+    total_reward = 0
     all_aloss = []
     all_closs = []
-    steps = 0
+    steps = 1
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -289,26 +359,24 @@ for s in range(episode):
                     print('The record stops')
                     record = False
         steps += 1
+        state,playerStatus,gameText,discnt_rewards = agentoo7.preprocess0(state,playerStatus,gameText,rewards, 0.99)
         action = agentoo7.act(state,playerStatus,gameText)
-        next_state,reward, next_playerStatus, next_gameText,done  = game.playerAction(action)
+        
+        if state.shape[1] == h_step:
+            print("do I work")
+            replay_memory.create_memory(state,playerStatus, gameText, discnt_rewards,action)
+            print('replay buffer '+ str(len(replay_memory.replay_buffer))+ " " + str(steps) + " " + str(action))
+        next_state, next_playerStatus, next_gameText,reward,done  = game.playerAction(action)
         action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
-        # print(reward)
         print(action_name[action],reward,game.cave)
-        next_state,next_playerStatus,next_gameText = agentoo7.preprocess0(next_state,next_playerStatus,next_gameText)
+        rewards.append(reward)
+        total_reward += reward
         state = next_state
         playerStatus = next_playerStatus
         gameText = next_gameText
-        rewards.append(reward)
-        total_reward += reward
-        if len(train_playerstatus) >= n_step:
-            train_actions = []
-            train_states = []
-            train_playerstatus = []
-            train_gametexts = []
-        train_actions.append(action)
-        train_states.append(state)
-        train_playerstatus.append(playerStatus)
-        train_gametexts.append(gameText)
+        # print(state.shape[1])
+        
+
         if done:
             game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
 
@@ -337,10 +405,15 @@ for s in range(episode):
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
-        if steps > h_step:
-            if steps%n_step == 0:
-                train_states,train_playerstatus,train_gametexts,discnt_rewards= agentoo7.preprocess1(train_states,train_playerstatus,train_gametexts, rewards, 0.99)
-                al,cl = agentoo7.learn(train_states,train_playerstatus,train_gametexts, train_actions, discnt_rewards)
+
+        if steps%n_step == 0 and steps!= 0:
+            if len(replay_memory.replay_buffer) >= h_step:
+                batch = replay_memory.take_batch(batch_size = 4)
+                # print('replay buffer '+ str(len(replay_memory.replay_buffer)))
+                # print(batch[0][0].shape)
+                train_states,train_playerstatus,train_gametexts,train_discnt_rewards,train_actions= agentoo7.preprocess1(batch)
+                # print(train_discnt_rewards)
+                al,cl = agentoo7.learn(train_states,train_playerstatus,train_gametexts, train_discnt_rewards, train_actions)
                 # print(train_state[0].shape)
                 # actions, discnt_rewards = agentoo7.preprocess2(actions, rewards, 0.99)
                 # for i in range(n_step,h_step):
@@ -372,8 +445,8 @@ for s in range(episode):
                 f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','w')
                 f.write(str(np.array(agentoo7.a_opt._decayed_lr(tf.float32), dtype=np.float32)))
                 f.close()
-            print(np.array(agentoo7.a_opt._decayed_lr(tf.float32), dtype=np.float32))
-            print(total_steps,agentoo7.a_opt._decayed_lr(tf.float32))
+            # print(np.array(agentoo7.a_opt._decayed_lr(tf.float32), dtype=np.float32))
+            # print(total_steps,agentoo7.a_opt._decayed_lr(tf.float32))
             ep_reward.append(total_reward)
             avg_reward = np.mean(ep_reward[-100:])
             total_avgr.append(avg_reward)
