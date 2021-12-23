@@ -175,8 +175,8 @@ class GamePAI():
         self.DrawMap.drawItem()
         self.DrawMap.enemyDepiction()
         self.DrawMap.drawPlayer(self.player.currentPositionX, self.player.currentPositionY)
-        FramePerSec = pygame.time.Clock()
-        FramePerSec.tick(5)
+        # FramePerSec = pygame.time.Clock()
+        # FramePerSec.tick(5)
         if self.depict == True:
             pygame.display.update()
 
