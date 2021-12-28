@@ -12,6 +12,7 @@ import tensorflow.keras.losses as kls
 from os.path import exists
 import sys
 import random
+# from guppy import hpy
 
 
 featuresCNN1 = 32
@@ -36,7 +37,7 @@ decay_steps = 10000
 seeded = False
 input = (148,148,3)
 record = False
-memory_size = 100000
+memory_size = 25000
 physical_devices = tf.config.list_physical_devices('GPU')
 try:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -103,10 +104,15 @@ class actor(tf.keras.Model):
 class agent():
     '''agent is a class that creates the agent who play the game using the actor and critic network.
     Also contains functions for the training of the networks'''
-    def __init__(self, gamma = 0.99):
+    def __init__(self,gamma = 0.99):
         self.gamma = gamma
-        self.a_opt = tf.keras.optimizers.Adam(learning_rate=5e-6)
-        self.c_opt = tf.keras.optimizers.Adam(learning_rate=5e-6)
+        # self.initial_learning_rate = initial_learning_rate
+        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        # initial_learning_rate=self.initial_learning_rate,
+        # decay_steps=decay_steps,
+        # decay_rate=0.9)
+        self.a_opt = tf.keras.optimizers.Adam(1e-5)
+        self.c_opt = tf.keras.optimizers.Adam(1e-5)
         self.actor = actor()
         self.critic = critic()
         self.log_prob = None
@@ -126,18 +132,21 @@ class agent():
         return int(action.numpy()[0])
 
     def preprocess0(self, state,playerstatus,gameText,rewards, gamma):
-        '''This function cretaes the history of observation for the input of the NN. Also calculate
+        '''This function cretaes the history of observation for the input to the NN. Also calculate
         the valeu of the last observation based on past and current rewards.'''
-        sum_reward = 0        
-        rewards.reverse()
-        for r in rewards:
-            sum_reward = r + gamma*sum_reward
+        sum_reward = 0 
+        # print(rewards)      
         rewards.reverse()
         
+        for r in rewards:
+            sum_reward = r + gamma*sum_reward
+            # print(sum_reward)
+        rewards.reverse()
+       
         if len(self.buffer_State) >= self.buffer_size:
             del self.buffer_State[0]
         self.buffer_State.append(state)
-        state = np.array(self.buffer_State)
+        state = np.array(self.buffer_State,dtype=np.float32)
         state = np.expand_dims(state, axis=0)
 
         if len(self.buffer_playerStatus) >= self.buffer_size:
@@ -162,15 +171,15 @@ class agent():
         actions = []
         for i in range(n_step):
             state.append(batch[i][0])
-        state = np.array(state)
+        state = np.array(state,dtype=np.float32)
         state =  np.squeeze(state,axis = 1)
         for i in range(n_step):
             playerstatus.append(batch[i][1])
-        playerstatus = np.array(playerstatus)
+        playerstatus = np.array(playerstatus,dtype=np.float32)
         playerstatus =  np.squeeze(playerstatus,axis = 1)
         for i in range(n_step):
             gameText.append(batch[i][2])
-        gameText = np.array(gameText)
+        gameText = np.array(gameText,dtype=np.float32)
         gameText =  np.squeeze(gameText,axis = 1)
         for i in range(n_step):
             discnt_rewards.append(batch[i][3])
@@ -238,7 +247,7 @@ class agent():
 class replay():
     '''This class used as a buffer for the replay memory. Batches of 4 memory units are extracted from the memory and feeded at the network.
     Each memory unit contains 4 observations 3 for the history input at the lstms and one last observation. For the last observation also
-     included the value it posses and the action which follow up this last observation.'''
+     included the value it posses and the action which follow up based on that observation.'''
     def __init__(self,memory_size):
         self.memory_size = memory_size
         self.replay_buffer = []
@@ -261,7 +270,7 @@ class replay():
     
     def create_memory(self,state,playerStatus, gameText, discnt_rewards,action):
         '''This function creates one memory unit. Each memory unit contains 4 observations 3 for the history input at the lstms 
-        and one last observation. For the last observation also included the value it posses and the action which follow up this last observation.'''
+        and one last observation. For the last observation also included the value it posses and the action which follow up based on that observation..'''
         memory = []
         memory.append(state)
         memory.append(playerStatus)
@@ -271,23 +280,23 @@ class replay():
         self.write_memory(memory)
 
 # tf.random.set_seed(39999)
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\steps.txt'):
-    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\steps.txt','r')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\steps.txt'):
+    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\steps.txt','r')
     total_steps = int(f.read())
     f.close()
 agentoo7 = agent()
 replay_memory = replay(memory_size)
-f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\episodes.txt','r')
+f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\episodes.txt','r')
 episodes_text = int(f.read())
 f.close()
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\ actor_model.data-00000-of-00001'):
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ actor_model.data-00000-of-00001'):
     print("actor model is loaded")
     agentoo7.actor.built = True
-    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\ actor_model')
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\ critic_model.data-00000-of-00001'):
+    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ actor_model')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ critic_model.data-00000-of-00001'):
     print("critic model is loaded")
     agentoo7.critic.built = True
-    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\ critic_model')
+    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ critic_model')
 episode = 10000 - episodes_text
 ep_reward = []
 total_avgr = []
@@ -303,6 +312,7 @@ for s in range(episode):
     all_aloss = []
     all_closs = []
     steps = 1
+    action = 0
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -316,11 +326,13 @@ for s in range(episode):
                     print('The record stops')
                     record = False
         steps += 1
-        state,playerStatus,gameText,discnt_rewards = agentoo7.preprocess0(state,playerStatus,gameText,rewards, 0.99)
+        state,playerStatus,gameText,discnt_rewards = agentoo7.preprocess0(state,playerStatus,gameText,rewards, 0.5)
+        action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
+        print(discnt_rewards)
         action = agentoo7.act(state,playerStatus,gameText)
-        
         if state.shape[1] == h_step:
             replay_memory.create_memory(state,playerStatus, gameText, discnt_rewards,action)
+        
         next_state, next_playerStatus, next_gameText,reward,done  = game.playerAction(action)
         action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
         print(action_name[action],reward,game.cave)
@@ -361,29 +373,32 @@ for s in range(episode):
                 done = True
 
         if steps%n_step == 0 and steps!= 0:
+            # h = hpy()
+            # print(h.heap())
             if len(replay_memory.replay_buffer) >= h_step:
+                print(len(replay_memory.replay_buffer),total_steps,steps,(replay_memory.replay_buffer[0][0].nbytes + replay_memory.replay_buffer[0][1].nbytes
+                + replay_memory.replay_buffer[0][2].nbytes)*len(replay_memory.replay_buffer)/(1024*1024*1024))
                 batch = replay_memory.take_batch(batch_size = 4)
                 train_states,train_playerstatus,train_gametexts,train_discnt_rewards,train_actions= agentoo7.preprocess1(batch)
                 al,cl = agentoo7.learn(train_states,train_playerstatus,train_gametexts, train_discnt_rewards, train_actions)
         
         if done:
             total_steps = total_steps + steps
-            agentoo7.last_discnt_rewards = 0
-            if s%100 == 0 and s != 0:
-                agentoo7.actor.save_weights('.\playerActorLSTM_Imp_15_12_21\ actor_model')
-                agentoo7.critic.save_weights('.\playerActorLSTM_Imp_15_12_21\ critic_model')
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\episodes.txt','w')
+            if s%100 == 0 :#and s !=0:
+                agentoo7.actor.save_weights('.\model_LSTM_Imp_15_12_21_2\ actor_model2')
+                agentoo7.critic.save_weights('.\model_LSTM_Imp_15_12_21_2\ critic_model2')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\episodes.txt','w')
                 f.write(str(episodes_text + 100))
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\episodes.txt','r')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\episodes.txt','r')
                 episodes_text = int(f.read())
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\steps.txt','w')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\steps.txt','w')
                 f.write(str(total_steps))
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','w')
-                f.write(str(np.array(agentoo7.a_opt._decayed_lr(tf.float32), dtype=np.float32)))
-                f.close()
+                # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','w')
+                # f.write(str(np.array(agentoo7.a_opt._decayed_lr(tf.float32), dtype=np.float32)))
+                # f.close()
             # print(np.array(agentoo7.a_opt._decayed_lr(tf.float32), dtype=np.float32))
             # print(total_steps,agentoo7.a_opt._decayed_lr(tf.float32))
             ep_reward.append(total_reward)
