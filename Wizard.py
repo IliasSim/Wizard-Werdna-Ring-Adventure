@@ -237,7 +237,7 @@ class Wizard(AbstractPlayer):
             self.manaPoints = self.manaPoints + 4
             if  self.manaPoints > self.maxManaPoints:
                 self.manaPoints = self.maxManaPoints
-        text = self.name + " rest and earn " + str(self.hitPoints - oldhp) + " HP" + str(self.manaPoints - oldmp) + " MP"
+        text = self.name + " rest and earn " + str(self.hitPoints - oldhp) + " HP " + str(self.manaPoints - oldmp) + " MP"
         settings.addGameText(text)
         
     def attack(self, enemy):
