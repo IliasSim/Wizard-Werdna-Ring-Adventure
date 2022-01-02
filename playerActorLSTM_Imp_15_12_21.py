@@ -37,7 +37,8 @@ decay_steps = 10000
 seeded = False
 input = (148,148,3)
 record = False
-memory_size = 25000
+memory_size = 250000
+batch_size = 12
 physical_devices = tf.config.list_physical_devices('GPU')
 try:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -104,8 +105,8 @@ class actor(tf.keras.Model):
 class agent():
     '''agent is a class that creates the agent who play the game using the actor and critic network.
     Also contains functions for the training of the networks'''
-    def __init__(self,gamma = 0.99):
-        self.gamma = gamma
+    def __init__(self):
+        # self.gamma = gamma
         # self.initial_learning_rate = initial_learning_rate
         # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         # initial_learning_rate=self.initial_learning_rate,
@@ -125,23 +126,15 @@ class agent():
     def act(self,state,playerstatus,gameText):
         '''This function use the actor NN in order to produce an action as an output'''
         prob = self.actor(state,playerstatus,gameText)
-        print(prob)
+        # print(prob)
         prob = prob.numpy()
         dist = tfp.distributions.Categorical(probs=prob, dtype=tf.float32)
         action = dist.sample()
         return int(action.numpy()[0])
 
-    def preprocess0(self, state,playerstatus,gameText,rewards, gamma):
+    def preprocess0(self, state,playerstatus,gameText):
         '''This function cretaes the history of observation for the input to the NN. Also calculate
         the valeu of the last observation based on past and current rewards.'''
-        sum_reward = 0 
-        # print(rewards)      
-        rewards.reverse()
-        
-        for r in rewards:
-            sum_reward = r + gamma*sum_reward
-            # print(sum_reward)
-        rewards.reverse()
        
         if len(self.buffer_State) >= self.buffer_size:
             del self.buffer_State[0]
@@ -159,33 +152,85 @@ class agent():
             del self.buffer_text[0]
         self.buffer_text.append(gameText)
         gameText = np.array(self.buffer_text, dtype=np.float32)
-        gameText = np.expand_dims(gameText, axis=0)    
-        return state,playerstatus,gameText,sum_reward
+        gameText = np.expand_dims(gameText, axis=0)
+        return state,playerstatus,gameText
+
+    def preprocessVS(self,rewards,gamma):
+        sum_reward = 0 
+        # print(rewards)      
+        rewards.reverse()
+        for r in rewards:
+            sum_reward = r + gamma*sum_reward
+            # print(sum_reward)
+        rewards.reverse()
+        return sum_reward
 
     def preprocess1(self,batch):
         '''This function take four memory registrations and modified them in order to be used for the training of the network'''
         state = []
         playerstatus = []
         gameText = []
-        discnt_rewards = []
+        value_of_states = []
         actions = []
-        for i in range(n_step):
-            state.append(batch[i][0])
-        state = np.array(state,dtype=np.float32)
-        state =  np.squeeze(state,axis = 1)
-        for i in range(n_step):
-            playerstatus.append(batch[i][1])
-        playerstatus = np.array(playerstatus,dtype=np.float32)
-        playerstatus =  np.squeeze(playerstatus,axis = 1)
-        for i in range(n_step):
-            gameText.append(batch[i][2])
-        gameText = np.array(gameText,dtype=np.float32)
-        gameText =  np.squeeze(gameText,axis = 1)
-        for i in range(n_step):
-            discnt_rewards.append(batch[i][3])
-        for i in range(n_step):
+
+        for i in range(h_step-1,len(batch)):
             actions.append(batch[i][4])
-        return  state,playerstatus,gameText,discnt_rewards,actions
+
+        for i in range(h_step-1,len(batch)):
+            value_of_states.append(batch[i][3])
+        
+
+        # for i in range(h_step-1,len(batch)):
+            # sum_rewards = 0
+            # for z in range(i,len(batch)):
+                # print(batch[z][3])
+               #  sum_rewards = batch[z][3] + gamma*sum_rewards
+           #  value_of_states.append(sum_rewards)
+        # for z in range(3,32):
+            # print(batch[z][3])
+        # print(value_of_states,len(value_of_states))
+
+        for i in range(h_step-1,len(batch)):
+            state_batch = []
+            playerstatus_batch = []
+            gameText_batch = []
+            for z in range(i - 3,i + 1):
+                # print(z)
+                state_batch.append(batch[z][0])
+                playerstatus_batch.append(batch[z][1])
+                gameText_batch.append(batch[z][2])
+
+            # print('This is i '+str(i - 3 + 1))
+            state_batch = np.array(state_batch,dtype=np.float32)
+            playerstatus_batch = np.array(playerstatus_batch,dtype=np.float32)
+            gameText_batch = np.array(gameText_batch,dtype=np.float32)
+            #state_batch = np.expand_dims(state_batch, axis=0)
+            state.append(state_batch)
+            playerstatus.append(playerstatus_batch)
+            gameText.append(gameText_batch)
+            
+        state = np.array(state,dtype=np.float32)
+        playerstatus = np.array(playerstatus,dtype=np.float32)
+        gameText = np.array(gameText,dtype=np.float32)        
+        
+        # print(state.shape,playerstatus.shape,gameText.shape,playerstatus)
+            #print(state_batch.shape)
+            #state.append(batch[i][0])
+        #state = np.array(state,dtype=np.float32)
+        #state =  np.squeeze(state,axis = 1)
+        #for i in range(n_step):
+            # playerstatus.append(batch[i][1])
+        #playerstatus = np.array(playerstatus,dtype=np.float32)
+        #playerstatus =  np.squeeze(playerstatus,axis = 1)
+        #for i in range(n_step):
+            #gameText.append(batch[i][2])
+        #gameText = np.array(gameText,dtype=np.float32)
+        #gameText =  np.squeeze(gameText,axis = 1)
+        # for i in range(n_step):
+            # discnt_rewards.append(batch[i][3])
+        #for i in range(n_step):
+            #actions.append(batch[i][4])
+        return  state,playerstatus,gameText,value_of_states,actions
 
     def actor_loss(self, probs, actions, td):
         '''This function calculate actor NN losses. Which is negative of Log probability of action taken multiplied 
@@ -268,42 +313,44 @@ class replay():
             del self.replay_buffer[0]
         self.replay_buffer.append(memory)
     
-    def create_memory(self,state,playerStatus, gameText, discnt_rewards,action):
+    def create_memory(self,state,playerStatus, gameText, reward,action):
         '''This function creates one memory unit. Each memory unit contains 4 observations 3 for the history input at the lstms 
         and one last observation. For the last observation also included the value it posses and the action which follow up based on that observation..'''
         memory = []
         memory.append(state)
         memory.append(playerStatus)
         memory.append(gameText)
-        memory.append(discnt_rewards)
+        memory.append(reward)
         memory.append(action)
         self.write_memory(memory)
 
+    
+
 # tf.random.set_seed(39999)
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\steps.txt'):
-    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\steps.txt','r')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\steps.txt'):
+    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\steps.txt','r')
     total_steps = int(f.read())
     f.close()
 agentoo7 = agent()
 replay_memory = replay(memory_size)
-f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\episodes.txt','r')
+f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\episodes.txt','r')
 episodes_text = int(f.read())
 f.close()
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ actor_model.data-00000-of-00001'):
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\ actor_model2.data-00000-of-00001'):
     print("actor model is loaded")
     agentoo7.actor.built = True
-    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ actor_model')
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ critic_model.data-00000-of-00001'):
+    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\ actor_model2')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\ critic_model2.data-00000-of-00001'):
     print("critic model is loaded")
     agentoo7.critic.built = True
-    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\ critic_model')
-episode = 10000 - episodes_text
+    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\ critic_model2')
+episode = 10000
 ep_reward = []
 total_avgr = []
 dfrewards = []
 game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded)
 game_No = episodes_text
-for s in range(episode):
+for s in range(episodes_text,episode):
     game_No = game_No + 1
     done = False
     state,playerStatus, gameText = game.initialGameState()
@@ -311,8 +358,7 @@ for s in range(episode):
     total_reward = 0
     all_aloss = []
     all_closs = []
-    steps = 1
-    action = 0
+    steps = 0
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -326,17 +372,18 @@ for s in range(episode):
                     print('The record stops')
                     record = False
         steps += 1
-        state,playerStatus,gameText,discnt_rewards = agentoo7.preprocess0(state,playerStatus,gameText,rewards, 0.5)
-        action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
-        print(discnt_rewards)
+        buffer_state,buffer_playerStatus,buffer_gameText = state,playerStatus,gameText
+        state,playerStatus,gameText = agentoo7.preprocess0(state,playerStatus,gameText)
+        # print(state.shape)
         action = agentoo7.act(state,playerStatus,gameText)
-        if state.shape[1] == h_step:
-            replay_memory.create_memory(state,playerStatus, gameText, discnt_rewards,action)
-        
         next_state, next_playerStatus, next_gameText,reward,done  = game.playerAction(action)
-        action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
-        print(action_name[action],reward,game.cave)
         rewards.append(reward)
+        value_of_state = agentoo7.preprocessVS(rewards,0.9)
+        # print(rewards,value_of_state)
+        replay_memory.create_memory(buffer_state,buffer_playerStatus,buffer_gameText, value_of_state,action)
+        action_name = {0:'up',1:'right',2:'down',3:'left',4:'rest',5:'hp',6:'mp',7:'attack',8:'pick'}
+        print(action_name[action],reward,game.cave,steps,s,len(replay_memory.replay_buffer))
+        
         total_reward += reward
         state = next_state
         playerStatus = next_playerStatus
@@ -349,8 +396,8 @@ for s in range(episode):
         if steps%1000 == 0:
             print(steps,total_reward,action_name[action],game.cave)
 
-        if s + episodes_text <= 2000: 
-            if steps >= 2000 and game.cave < 2:
+        if s <= 2000: 
+            if steps >= 500 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
                     game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
@@ -360,7 +407,7 @@ for s in range(episode):
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
-        if s + episodes_text > 2000: 
+        if s > 2000: 
             if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
@@ -375,25 +422,26 @@ for s in range(episode):
         if steps%n_step == 0 and steps!= 0:
             # h = hpy()
             # print(h.heap())
-            if len(replay_memory.replay_buffer) >= h_step:
-                print(len(replay_memory.replay_buffer),total_steps,steps,(replay_memory.replay_buffer[0][0].nbytes + replay_memory.replay_buffer[0][1].nbytes
-                + replay_memory.replay_buffer[0][2].nbytes)*len(replay_memory.replay_buffer)/(1024*1024*1024))
-                batch = replay_memory.take_batch(batch_size = 4)
+            if len(replay_memory.replay_buffer) >= batch_size:
+                # print(len(replay_memory.replay_buffer),total_steps,steps,(replay_memory.replay_buffer[0][0].nbytes + replay_memory.replay_buffer[0][1].nbytes
+                # + replay_memory.replay_buffer[0][2].nbytes)*len(replay_memory.replay_buffer)/(1024*1024*1024))
+                batch = replay_memory.take_batch(batch_size = batch_size)
                 train_states,train_playerstatus,train_gametexts,train_discnt_rewards,train_actions= agentoo7.preprocess1(batch)
+                # print(train_states.shape,train_playerstatus.shape,train_gametexts.shape,len(train_discnt_rewards),len(train_actions))
                 al,cl = agentoo7.learn(train_states,train_playerstatus,train_gametexts, train_discnt_rewards, train_actions)
-        
+                print('Actor losses ' + str(al) + 'Critic Losses' + str(cl))
         if done:
             total_steps = total_steps + steps
-            if s%100 == 0 :#and s !=0:
-                agentoo7.actor.save_weights('.\model_LSTM_Imp_15_12_21_2\ actor_model2')
-                agentoo7.critic.save_weights('.\model_LSTM_Imp_15_12_21_2\ critic_model2')
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\episodes.txt','w')
+            if s%100 == 0 and s != episodes_text:
+                agentoo7.actor.save_weights('.\model_LSTM_Imp_15_12_21_6\ actor_model2')
+                agentoo7.critic.save_weights('.\model_LSTM_Imp_15_12_21_6\ critic_model2')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\episodes.txt','w')
                 f.write(str(episodes_text + 100))
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\episodes.txt','r')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\episodes.txt','r')
                 episodes_text = int(f.read())
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_2\steps.txt','w')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_6\steps.txt','w')
                 f.write(str(total_steps))
                 f.close()
                 # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','w')
