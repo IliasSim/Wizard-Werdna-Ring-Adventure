@@ -32,7 +32,7 @@ class GamePAI():
         self.total_reward = []
         self.buffer_size = 15
         self.killNo = 0
-        self.reward_useless_action = 1
+        self.reward_useless_action = 0
         self.reward_usefull_action = 1
         settings.screenFactor = screenFactor
         settings.mapWidth = int(self.xPixel/3)*screenFactor
@@ -321,7 +321,7 @@ class GamePAI():
                 if settings.tiles[settings.exitx][settings.exity].visibility == GameEnum.VisibilityType.visible:
                     self.reward += 0
             if Xposition == self.player.currentPositionX and Yposition == self.player.currentPositionY:
-                # self.reward -= 1
+                self.reward -= self.reward_useless_action*4
                 self.enemyMove()  
                 self.afterMoveDepiction()   
         if action == 4:
@@ -545,6 +545,8 @@ class GamePAI():
         # print(self.reward)
         # self.buffer_reward.append(self.reward)
         # print(self.buffer_reward[len(self.buffer_reward)-1])
+        # self.reward = self.standardize_reward(self.reward)
+        # print(self.reward)
         return state, playerstatus,  textArray, self.reward, done
 
     def gameVocab(self,textList):
