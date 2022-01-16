@@ -177,7 +177,7 @@ class Wizard(AbstractPlayer):
             settings.addGameText(text)
         if settings.tiles[self.currentPositionX][self.currentPositionY].store != None and isinstance(settings.tiles[self.currentPositionX][self.currentPositionY].store,Staff):
             weapon = settings.tiles[self.currentPositionX][self.currentPositionY].store
-            text = "Press p to equip with the " + weapon.name + " which add " + str(weapon.hp_boost) + " to max HP and " + str(weapon.manaboost) + " to max MP and " + str(weapon.intelligence_boost) + ' to player inteligence'
+            text = self.name + " press p to equip with the " + weapon.name + " which add " + str(weapon.hp_boost) + " to max HP and " + str(weapon.manaboost) + " to max MP and " + str(weapon.intelligence_boost) + ' to player inteligence'
             settings.addGameText(text)
         if settings.tiles[self.currentPositionX][self.currentPositionY].store != None and isinstance(settings.tiles[self.currentPositionX][self.currentPositionY].store,Werdna_Ring):
             text = self.name + " found Werdna's Ring press p to end game."
