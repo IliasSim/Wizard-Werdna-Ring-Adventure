@@ -1,0 +1,42 @@
+featuresCNN1 = 32
+CNN1Shape = 3
+CNN1Step = 1
+featuresCNN2 = 32
+CNN2Shape = 5
+CNN2Step = 2
+featuresCNN3 = 16
+CNN3Shape = 10
+CNN3Step = 5
+denseLayerN = 256
+denseLayerNL_21 = 128
+denseLayerNL_31 = 256
+h_step = 4
+n_step = 4
+every time time an action which considered useless the reward is 0.
+This is an actual implemantation of n_step algorithm from sutton book page 231. I use adam optimizer no SGD
+move to new area reward 5
+negative useless movement:
+	move to already discovered area 
+	move towards wall area 
+	attack an enemy aimlessly 
+	killed by an enemy
+	attacked by an enemy
+	use health potion aimlessly
+	use mana potion aimlessly
+pick weapon aimlessly
+pick potion 100
+attack an enemy 10
+Kill an enemy 100
+use rest 1
+use health potion correctly 100
+use mana potion correctly 100
+enter new cave 10000
+pick weapon 100
+win game 10000
+ender cave
+gamma 0,99
+rewards are not zeroized. Rewards are not standarized.learning rate is 1e-5. Replay memory is used, the size is 80000 memory unit. The memory 
+is filled with episode following random policy and then start training. the training is made every 32 two steps with bathes of 35 memory units 
+(the three firsts is used for the history of the first state).
+
+
