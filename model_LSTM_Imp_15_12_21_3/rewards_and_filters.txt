@@ -35,7 +35,7 @@ ender cave
 gain hp 0
 gain mp 0
 gamma 0,99
-rewards are zeroized.Here the original look forword model on discounted reward is used
+rewards are zeroized.Here the original look forward model on discounted reward is used
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=5e-6,
         decay_steps=10000,
