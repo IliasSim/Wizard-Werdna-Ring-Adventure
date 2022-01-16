@@ -129,7 +129,7 @@ class Warrior(AbstractPlayer):
             settings.addGameText(text)
         if settings.tiles[self.currentPositionX][self.currentPositionY].store != None and isinstance(settings.tiles[self.currentPositionX][self.currentPositionY].store,Sword):
             weapon = settings.tiles[self.currentPositionX][self.currentPositionY].store
-            text = "Press p to equip with the " + weapon.name + " which add " + str(weapon.hp_boost) + " to max HP and " + str(weapon.damage_boost) + " to player strength"
+            text = self.name + " press p to equip with the " + weapon.name + " which add " + str(weapon.hp_boost) + " to max HP and " + str(weapon.damage_boost) + " to player strength"
             settings.addGameText(text)
         if settings.tiles[self.currentPositionX][self.currentPositionY].store != None and isinstance(settings.tiles[self.currentPositionX][self.currentPositionY].store,Staff):
             text = self.name + " can't use this type of weapon."
