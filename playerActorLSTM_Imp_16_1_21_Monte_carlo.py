@@ -34,7 +34,7 @@ h_step = 4
 n_step = 4
 screenfactor = 1
 decay_steps = 10000
-seeded = False
+seeded = True
 input = (148,148,3)
 record = False
 memory_size = 250000
@@ -115,6 +115,11 @@ class agent():
         self.c_opt = tf.keras.optimizers.Adam(1e-5)
         self.actor = actor()
         self.critic = critic()
+        self.actor_e = actor()
+        self.critic_e = critic()
+        self.actor_c = actor()
+        self.critic_c = critic()
+        print(self.actor,self.actor_e)
         self.log_prob = None
         self.buffer_State = []
         self.buffer_playerStatus = []
@@ -169,7 +174,6 @@ class agent():
 
         for i in range(h_step-1,len(batch)):
             rewards.append(batch[i][3])
-        
 
         for i in range(h_step-1,len(batch)):
             sum_rewards = 0
@@ -212,19 +216,40 @@ class agent():
         train_gameText = np.expand_dims(train_gameText,axis = 0)
         return train_state,train_playerstatus,train_gameText
 
-    def actor_loss(self, probs, actions, td):
+    def actor_loss(self, probs, actions, td,oneway):
         '''This function calculate actor NN losses. Which is negative of Log probability of action taken multiplied 
         by temporal difference used in q learning.'''
+        print('probs ' + str(probs))
         probability = []
         log_probability= []
-        dist = tfp.distributions.Categorical(probs, dtype=tf.float32)
-        log_prob = dist.log_prob(actions)
-        prob = dist.prob(actions)
-        probability.append(prob)
-        log_probability.append(log_prob)
+        if oneway:
+            dist = tfp.distributions.Categorical(probs, dtype=tf.float32)
+            # print(dist)
+            # log_prob = tf.math.log(probs[0][actions])
+            dist = tfp.distributions.Categorical(probs=probs, dtype=tf.float32)
+            log_prob = dist.log_prob(actions)
+            print('actions ' + str(actions))
+            print('log_prob ' + str(log_prob))
+            prob = dist.prob(actions)
+            probability.append(prob)
+            log_probability.append(log_prob)
+        if not oneway:
+            for pb,a in zip(probs,actions):
+                dist = tfp.distributions.Categorical(probs=pb, dtype=tf.float32)
+                log_prob = dist.log_prob(a)
+                print('actions' + str(a))
+                print('log_prob ' + str(log_prob))
+                prob = dist.prob(a)
+                probability.append(prob)
+                log_probability.append(log_prob)
+
+        print('probability ' + str(probability))
+        print('log_probability ' + str(log_probability))
+
         p_loss= []
         e_loss = []
         td = td.numpy()
+        print('td ' + str(td))
         for pb, t, lpb in zip(probability, td, log_probability):
                         t =  tf.constant(t)
                         policy_loss = tf.math.multiply(lpb,t)
@@ -235,24 +260,62 @@ class agent():
         e_loss = tf.stack(e_loss)
         p_loss = tf.reduce_mean(p_loss)
         e_loss = tf.reduce_mean(e_loss)
+        print('p_loss ' + str(p_loss))
+        print('e_loss ' + str(e_loss))
         loss = -p_loss - 0.0001 * e_loss
+        print('loss' + str(loss))
         return loss
 
-    def learn(self, states,playerstatus,gameTexts, G,actions):
+    def learnC(self, states,playerstatus,gameTexts, G,actions,oneway):
         '''This function is used for the training of the network, it also contain a code chunk for the depiction of the image used for the training. 
         For critic loss, we took a naive way by just taking the square of the temporal difference.'''
-        # discnt_rewards = tf.reshape(discnt_rewards, (len(discnt_rewards),))
+        G = tf.reshape(G, (len(G),))
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
             p = self.actor(states,playerstatus,gameTexts, training=True)
             v =  self.critic(states,playerstatus,gameTexts,training=True)
             v = tf.reshape(v, (len(v),))
+            # print(p)
+            print(v)
             td = tf.math.subtract(G, v)
-            a_loss = self.actor_loss(p, actions, td)
+            a_loss = self.actor_loss(p, actions, td,oneway)
             c_loss = 0.5*kls.mean_squared_error(G, v)
+            # print(a_loss,c_loss)
         grads1 = tape1.gradient(a_loss, self.actor.trainable_variables)
         grads2 = tape2.gradient(c_loss, self.critic.trainable_variables)
         self.a_opt.apply_gradients(zip(grads1, self.actor.trainable_variables))
         self.c_opt.apply_gradients(zip(grads2, self.critic.trainable_variables))
+        
+        if record:
+            rows = 2
+            columns = 4
+            for i in range(n_step):
+                fig = plt.figure(figsize=(7, 7))
+                print(states.shape)
+                for z in range(h_step):
+                    fig.add_subplot(rows, columns, z+1)
+                    print("LSTM " + str(i + 1) + str(playerstatus[i]))
+                    plt.imshow(states[i][z])
+                    plt.axis('off')
+                plt.show()
+        return a_loss, c_loss
+
+    def learn(self, states,playerstatus,gameTexts, G,actions,oneway):
+        '''This function is used for the training of the network, it also contain a code chunk for the depiction of the image used for the training. 
+        For critic loss, we took a naive way by just taking the square of the temporal difference.'''
+        # discnt_rewards = tf.reshape(discnt_rewards, (len(discnt_rewards),))
+        with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
+            p = self.actor_c(states,playerstatus,gameTexts)
+            v = self.critic_c(states,playerstatus,gameTexts)
+            v = tf.reshape(v, (len(v),))
+            # print(p)
+            print(v)
+            td = tf.math.subtract(G, v)
+            a_loss = self.actor_loss(p, actions, td,oneway)
+            c_loss = 0.5*kls.mean_squared_error(G, v)
+        grads1 = tape1.gradient(a_loss, self.actor_c.trainable_variables)
+        grads2 = tape2.gradient(c_loss, self.critic_c.trainable_variables)
+        self.a_opt.apply_gradients(zip(grads1, self.actor_c.trainable_variables))
+        self.c_opt.apply_gradients(zip(grads2, self.critic_c.trainable_variables))
         
         if record:
             rows = 2
@@ -306,29 +369,40 @@ class replay():
 
     
 
-# tf.random.set_seed(39999)
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\steps.txt'):
-    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\steps.txt','r')
+tf.random.set_seed(39999)
+
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\steps.txt'):
+    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\steps.txt','r')
     total_steps = int(f.read())
     f.close()
-agentoo7 = agent()
-replay_memory = replay(memory_size)
-f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\episodes.txt','r')
+f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\episodes.txt','r')
 episodes_text = int(f.read())
+agentoo7 = agent()
+game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded)
+state,playerStatus, gameText = game.initialGameState()
+state,playerStatus,gameText = agentoo7.preprocess0(state,playerStatus,gameText)
+agentoo7.actor(state,playerStatus,gameText)
+agentoo7.actor_c(state,playerStatus,gameText)
+agentoo7.actor_e(state,playerStatus,gameText)
+agentoo7.critic(state,playerStatus,gameText)
+agentoo7.critic_c(state,playerStatus,gameText)
+agentoo7.critic_e(state,playerStatus,gameText)
+del state,playerStatus,gameText
+replay_memory = replay(memory_size)
 f.close()
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\ actor_model2.data-00000-of-00001'):
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\ actor_model2.data-00000-of-00001'):
     print("actor model is loaded")
     agentoo7.actor.built = True
-    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\ actor_model2')
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\ critic_model2.data-00000-of-00001'):
+    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\ actor_model2')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\ critic_model2.data-00000-of-00001'):
     print("critic model is loaded")
     agentoo7.critic.built = True
-    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\ critic_model2')
+    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\ critic_model2')
 episode = 10000
 ep_reward = []
 total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded)
+
 game_No = episodes_text
 for s in range(episodes_text,episode):
     game_No = game_No + 1
@@ -378,7 +452,7 @@ for s in range(episodes_text,episode):
             print(steps,total_reward,action_name[action],game.cave)
 
         if s <= 2000: 
-            if steps >= 10 and game.cave < 2:
+            if steps >= 500 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
                     game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
@@ -410,24 +484,37 @@ for s in range(episodes_text,episode):
             # batch = replay_memory.take_batch(batch_size = 100)
             train_states,train_playerstatus,train_gametexts,train_discounted_rewards,train_actions = agentoo7.preprocess1(replay_memory.replay_buffer,gamma)
             # print(train_states[].shape)
-            for i in range(len(train_states)):
-                train_states_T,train_playerstatus_T,train_gametexts_T = agentoo7.preprocess2(train_states[i],train_playerstatus[i],train_gametexts[i])
-                al,cl = agentoo7.learn(train_states_T,train_playerstatus_T,train_gametexts_T, train_discounted_rewards[i], train_actions[i])
-                print('Actor losses ' + str(al) + ' Critic Losses ' + str(cl) + str(train_discounted_rewards[i]) + ' for action ' + action_name[train_actions[i]])
+            # print(agentoo7.actor.get_weights())
+            oneway = True
+            if oneway:
+                for i in range(len(train_states)):
+                    agentoo7.actor_c.set_weights(agentoo7.actor.get_weights())
+                    agentoo7.critic_c.set_weights(agentoo7.critic.get_weights())
+                    train_states_T,train_playerstatus_T,train_gametexts_T = agentoo7.preprocess2(train_states[i],train_playerstatus[i],train_gametexts[i])
+                    al,cl = agentoo7.learn(train_states_T,train_playerstatus_T,train_gametexts_T, train_discounted_rewards[i], train_actions[i],oneway)
+                    agentoo7.actor_e.set_weights(agentoo7.actor_c.get_weights())
+                    agentoo7.critic_e.set_weights(agentoo7.critic_c.get_weights())
+                    print('Actor losses ' + str(al) + ' Critic Losses ' + str(cl) + str(train_discounted_rewards[i]) + ' for action ' + action_name[train_actions[i]])
+                agentoo7.actor.set_weights(agentoo7.actor_e.get_weights())
+                agentoo7.critic.set_weights(agentoo7.critic_e.get_weights())
             # print(train_states.shape,train_playerstatus.shape,train_gametexts.shape,len(train_discnt_rewards),len(train_actions))
+            # train_states_T,train_playerstatus_T,train_gametexts_T = agentoo7.preprocess2(train_states,train_playerstatus,train_gametexts)
+            if not oneway:
+                al,cl = agentoo7.learnC(train_states,train_playerstatus,train_gametexts, train_discounted_rewards, train_actions,oneway)
+                print(al,cl)
             
         if done: 
             total_steps = total_steps + steps
             if s%100 == 0 and s != episodes_text:
-                agentoo7.actor.save_weights('.\model_LSTM_Imp_15_12_21_10\ actor_model2')
-                agentoo7.critic.save_weights('.\model_LSTM_Imp_15_12_21_10\ critic_model2')
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\episodes.txt','w')
+                agentoo7.actor.save_weights('.\modelLSTM_Imp_16_1_21_Monte_carlo\ actor_model2')
+                agentoo7.critic.save_weights('.\modelLSTM_Imp_16_1_21_Monte_carlo\ critic_model2')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\episodes.txt','w')
                 f.write(str(episodes_text + 100))
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\episodes.txt','r')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\episodes.txt','r')
                 episodes_text = int(f.read())
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\model_LSTM_Imp_15_12_21_10\steps.txt','w')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\steps.txt','w')
                 f.write(str(total_steps))
                 f.close()
                 # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','w')
