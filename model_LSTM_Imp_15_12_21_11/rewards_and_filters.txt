@@ -36,7 +36,7 @@ win game 10000
 ender cave
 gamma 0,99
 rewards are not zeroized. Rewards are not standarized.learning rate is 1e-5. Replay memory is used, the size is 80000 memory unit. The memory 
-is filled with episode following random policy and then start training. the training is made every 32 two steps with bathes of 35 memory units 
+is filled with episode following random policy and then start training. the training is made every 32 steps with bathes of 35 memory units 
 (the three firsts is used for the history of the first state).
 
 
