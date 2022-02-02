@@ -1,8 +1,8 @@
 from GamePAI import GamePAI
 import pygame
 import numpy as np
-#import os
-#os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
 import tensorflow as tf
 import tensorflow_probability as tfp
 import matplotlib.pyplot as plt
@@ -115,11 +115,6 @@ class agent():
         self.c_opt = tf.keras.optimizers.Adam(1e-5)
         self.actor = actor()
         self.critic = critic()
-        self.actor_e = actor()
-        self.critic_e = critic()
-        self.actor_c = actor()
-        self.critic_c = critic()
-        print(self.actor,self.actor_e)
         self.log_prob = None
         self.buffer_State = []
         self.buffer_playerStatus = []
@@ -183,9 +178,9 @@ class agent():
                 sum_rewards += reward
                 power += 1
             discounted_rewards.append(sum_rewards)
-        for z in range(3,len(batch)):
-            print(batch[z][3])
-        print(discounted_rewards,len(discounted_rewards))
+        # for z in range(3,len(batch)):
+            # print(batch[z][3])
+        # print(discounted_rewards,len(discounted_rewards))
 
         for i in range(h_step-1,len(batch)):
             state_batch = []
@@ -219,7 +214,7 @@ class agent():
     def actor_loss(self, probs, actions, td,oneway):
         '''This function calculate actor NN losses. Which is negative of Log probability of action taken multiplied 
         by temporal difference used in q learning.'''
-        print('probs ' + str(probs))
+        # print('probs ' + str(probs))
         probability = []
         log_probability= []
         if oneway:
@@ -228,42 +223,50 @@ class agent():
             # log_prob = tf.math.log(probs[0][actions])
             dist = tfp.distributions.Categorical(probs=probs, dtype=tf.float32)
             log_prob = dist.log_prob(actions)
-            print('actions ' + str(actions))
-            print('log_prob ' + str(log_prob))
+            # print('actions ' + str(actions))
+            # print('log_prob ' + str(log_prob))
             prob = dist.prob(actions)
-            probability.append(prob)
-            log_probability.append(log_prob)
+            # probability.append(prob)
+            # log_probability.append(log_prob)
+            policy_loss = tf.math.multiply(log_prob,td)
+            entropy_loss = tf.math.negative(tf.math.multiply(prob,log_prob))
+            loss = -policy_loss - 0.0001 * entropy_loss
+
+
+
+
+
         if not oneway:
             for pb,a in zip(probs,actions):
                 dist = tfp.distributions.Categorical(probs=pb, dtype=tf.float32)
                 log_prob = dist.log_prob(a)
-                print('actions' + str(a))
-                print('log_prob ' + str(log_prob))
+                # print('actions' + str(a))
+                # print('log_prob ' + str(log_prob))
                 prob = dist.prob(a)
                 probability.append(prob)
                 log_probability.append(log_prob)
-
-        print('probability ' + str(probability))
-        print('log_probability ' + str(log_probability))
-
-        p_loss= []
-        e_loss = []
-        td = td.numpy()
-        print('td ' + str(td))
-        for pb, t, lpb in zip(probability, td, log_probability):
+            p_loss= []
+            e_loss = []
+            td = td.numpy()
+            # print('td ' + str(td))
+            for pb, t, lpb in zip(probability, td, log_probability):
                         t =  tf.constant(t)
                         policy_loss = tf.math.multiply(lpb,t)
                         entropy_loss = tf.math.negative(tf.math.multiply(pb,lpb))
                         p_loss.append(policy_loss)
                         e_loss.append(entropy_loss)
-        p_loss = tf.stack(p_loss)
-        e_loss = tf.stack(e_loss)
-        p_loss = tf.reduce_mean(p_loss)
-        e_loss = tf.reduce_mean(e_loss)
-        print('p_loss ' + str(p_loss))
-        print('e_loss ' + str(e_loss))
-        loss = -p_loss - 0.0001 * e_loss
-        print('loss' + str(loss))
+            p_loss = tf.stack(p_loss)
+            e_loss = tf.stack(e_loss)
+            p_loss = tf.reduce_mean(p_loss)
+            e_loss = tf.reduce_mean(e_loss)
+            # print('p_loss ' + str(p_loss))
+            # print('e_loss ' + str(e_loss))
+            loss = -p_loss - 0.0001 * e_loss
+            # print('loss' + str(loss))
+            # print('probability ' + str(probability))
+            # print('log_probability ' + str(log_probability))
+
+        
         return loss
 
     def learnC(self, states,playerstatus,gameTexts, G,actions,oneway):
@@ -275,11 +278,13 @@ class agent():
             v =  self.critic(states,playerstatus,gameTexts,training=True)
             v = tf.reshape(v, (len(v),))
             # print(p)
-            print(v)
+            # print(v)
             td = tf.math.subtract(G, v)
             a_loss = self.actor_loss(p, actions, td,oneway)
             c_loss = 0.5*kls.mean_squared_error(G, v)
             # print(a_loss,c_loss)
+        # print('ilias')
+        # print(a_loss,c_loss)
         grads1 = tape1.gradient(a_loss, self.actor.trainable_variables)
         grads2 = tape2.gradient(c_loss, self.critic.trainable_variables)
         self.a_opt.apply_gradients(zip(grads1, self.actor.trainable_variables))
@@ -304,18 +309,28 @@ class agent():
         For critic loss, we took a naive way by just taking the square of the temporal difference.'''
         # discnt_rewards = tf.reshape(discnt_rewards, (len(discnt_rewards),))
         with tf.GradientTape() as tape1, tf.GradientTape() as tape2:
-            p = self.actor_c(states,playerstatus,gameTexts)
-            v = self.critic_c(states,playerstatus,gameTexts)
-            v = tf.reshape(v, (len(v),))
-            # print(p)
-            print(v)
-            td = tf.math.subtract(G, v)
-            a_loss = self.actor_loss(p, actions, td,oneway)
-            c_loss = 0.5*kls.mean_squared_error(G, v)
-        grads1 = tape1.gradient(a_loss, self.actor_c.trainable_variables)
-        grads2 = tape2.gradient(c_loss, self.critic_c.trainable_variables)
-        self.a_opt.apply_gradients(zip(grads1, self.actor_c.trainable_variables))
-        self.c_opt.apply_gradients(zip(grads2, self.critic_c.trainable_variables))
+            total_value = []
+            total_a_loss = []
+            for i in range(len(states)):
+                states_l,playerstatus_l,gameTexts_l = self.preprocess2(states[i],playerstatus[i],gameTexts[i])
+                p = self.actor(states_l,playerstatus_l,gameTexts_l)
+                v = self.critic(states_l,playerstatus_l,gameTexts_l)
+                # v = tf.reshape(v, (len(v),))
+                total_value.append(v)
+                # print(v)
+                td = tf.math.subtract(G[i], v)
+                a_loss = self.actor_loss(p, actions[i], td,oneway)
+                total_a_loss.append(a_loss)
+            total_a_loss = tf.stack(total_a_loss)
+            total_value = tf.reshape(total_value, (len(total_value),))
+            a_loss = tf.reduce_mean(total_a_loss)
+            c_loss = 0.5*kls.mean_squared_error(G, total_value)
+            # print('ilias')
+            # print(a_loss,c_loss)
+        grads1 = tape1.gradient(a_loss, self.actor.trainable_variables)
+        grads2 = tape2.gradient(c_loss, self.critic.trainable_variables)
+        self.a_opt.apply_gradients(zip(grads1, self.actor.trainable_variables))
+        self.c_opt.apply_gradients(zip(grads2, self.critic.trainable_variables))
         
         if record:
             rows = 2
@@ -380,14 +395,14 @@ episodes_text = int(f.read())
 agentoo7 = agent()
 game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded)
 state,playerStatus, gameText = game.initialGameState()
-state,playerStatus,gameText = agentoo7.preprocess0(state,playerStatus,gameText)
-agentoo7.actor(state,playerStatus,gameText)
-agentoo7.actor_c(state,playerStatus,gameText)
-agentoo7.actor_e(state,playerStatus,gameText)
-agentoo7.critic(state,playerStatus,gameText)
-agentoo7.critic_c(state,playerStatus,gameText)
-agentoo7.critic_e(state,playerStatus,gameText)
-del state,playerStatus,gameText
+# state,playerStatus,gameText = agentoo7.preprocess0(state,playerStatus,gameText)
+# agentoo7.actor(state,playerStatus,gameText)
+# agentoo7.actor_c(state,playerStatus,gameText)
+# agentoo7.actor_e(state,playerStatus,gameText)
+# agentoo7.critic(state,playerStatus,gameText)
+# agentoo7.critic_c(state,playerStatus,gameText)
+# agentoo7.critic_e(state,playerStatus,gameText)
+# del state,playerStatus,gameText
 replay_memory = replay(memory_size)
 f.close()
 if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_16_1_21_Monte_carlo\ actor_model2.data-00000-of-00001'):
@@ -474,7 +489,7 @@ for s in range(episodes_text,episode):
                 print(s,total_reward,game.cave)
                 done = True
 
-        if done:
+        if done or steps%50 ==0 and steps!=0:
             # h = hpy()
             # print(h.heap())
             
@@ -485,18 +500,18 @@ for s in range(episodes_text,episode):
             train_states,train_playerstatus,train_gametexts,train_discounted_rewards,train_actions = agentoo7.preprocess1(replay_memory.replay_buffer,gamma)
             # print(train_states[].shape)
             # print(agentoo7.actor.get_weights())
-            oneway = True
+            oneway = False
             if oneway:
-                for i in range(len(train_states)):
-                    agentoo7.actor_c.set_weights(agentoo7.actor.get_weights())
-                    agentoo7.critic_c.set_weights(agentoo7.critic.get_weights())
-                    train_states_T,train_playerstatus_T,train_gametexts_T = agentoo7.preprocess2(train_states[i],train_playerstatus[i],train_gametexts[i])
-                    al,cl = agentoo7.learn(train_states_T,train_playerstatus_T,train_gametexts_T, train_discounted_rewards[i], train_actions[i],oneway)
-                    agentoo7.actor_e.set_weights(agentoo7.actor_c.get_weights())
-                    agentoo7.critic_e.set_weights(agentoo7.critic_c.get_weights())
-                    print('Actor losses ' + str(al) + ' Critic Losses ' + str(cl) + str(train_discounted_rewards[i]) + ' for action ' + action_name[train_actions[i]])
-                agentoo7.actor.set_weights(agentoo7.actor_e.get_weights())
-                agentoo7.critic.set_weights(agentoo7.critic_e.get_weights())
+                # for i in range(len(train_states)):
+                    # agentoo7.actor_c.set_weights(agentoo7.actor.get_weights())
+                    # agentoo7.critic_c.set_weights(agentoo7.critic.get_weights())
+                # train_states_T,train_playerstatus_T,train_gametexts_T = agentoo7.preprocess2(train_states,train_playerstatus,train_gametexts)
+                al,cl = agentoo7.learn(train_states,train_playerstatus,train_gametexts, train_discounted_rewards, train_actions,oneway)
+                    # agentoo7.actor_e.set_weights(agentoo7.actor_c.get_weights())
+                    # agentoo7.critic_e.set_weights(agentoo7.critic_c.get_weights())
+                print('Actor losses ' + str(al) + ' Critic Losses ' + str(cl))
+                # agentoo7.actor.set_weights(agentoo7.actor_e.get_weights())
+                # agentoo7.critic.set_weights(agentoo7.critic_e.get_weights())
             # print(train_states.shape,train_playerstatus.shape,train_gametexts.shape,len(train_discnt_rewards),len(train_actions))
             # train_states_T,train_playerstatus_T,train_gametexts_T = agentoo7.preprocess2(train_states,train_playerstatus,train_gametexts)
             if not oneway:
