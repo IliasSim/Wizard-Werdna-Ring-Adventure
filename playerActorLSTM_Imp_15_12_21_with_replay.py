@@ -245,27 +245,28 @@ class agent():
     def actor_loss(self, probs, actions, td):
         '''This function calculate actor NN losses. Which is negative of Log probability of action taken multiplied 
         by temporal difference used in q learning.'''
-        probability = []
-        log_probability= []
+        # probability = []
+        # log_probability= []
         dist = tfp.distributions.Categorical(probs, dtype=tf.float32)
         log_prob = dist.log_prob(actions)
         prob = dist.prob(actions)
-        probability.append(prob)
-        log_probability.append(log_prob)
-        p_loss= []
-        e_loss = []
+        # probability.append(prob)
+        # log_probability.append(log_prob)
+        # p_loss= []
+        # e_loss = []
         td = td.numpy()
-        for pb, t, lpb in zip(probability, td, log_probability):
-                        t =  tf.constant(t)
-                        policy_loss = tf.math.multiply(lpb,t)
-                        entropy_loss = tf.math.negative(tf.math.multiply(pb,lpb))
-                        p_loss.append(policy_loss)
-                        e_loss.append(entropy_loss)
-        p_loss = tf.stack(p_loss)
-        e_loss = tf.stack(e_loss)
-        p_loss = tf.reduce_mean(p_loss)
-        e_loss = tf.reduce_mean(e_loss)
-        loss = -p_loss - 0.0001 * e_loss
+        
+        td =  tf.constant(td)
+        policy_loss = tf.math.multiply(log_prob,td)
+        entropy_loss = tf.math.negative(tf.math.multiply(prob,log_prob))
+        # p_loss.append(policy_loss)
+        # e_loss.append(entropy_loss)
+        # print(p_loss)
+        # p_loss = tf.stack(p_loss)
+        # e_loss = tf.stack(e_loss)
+        # p_loss = tf.reduce_mean(p_loss)
+        # e_loss = tf.reduce_mean(e_loss)
+        loss = -policy_loss - 0.0001 * entropy_loss
         return loss
 
     def learn(self, states,playerstatus,gameTexts, G,actions):
@@ -431,8 +432,6 @@ for s in range(episodes_text,episode):
                 done = True
 
         if done or steps%batch_size ==0 and steps != 0:
-            # h = hpy()
-            # print(h.heap())
             
             # print(len(replay_memory.replay_buffer),total_steps,steps,(replay_memory.replay_buffer[0][0].nbytes + replay_memory.replay_buffer[0][1].nbytes
             # + replay_memory.replay_buffer[0][2].nbytes)*len(replay_memory.replay_buffer)/(1024*1024*1024))
