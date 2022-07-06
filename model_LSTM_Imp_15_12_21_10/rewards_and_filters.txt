@@ -23,7 +23,7 @@ negative useless movement:
 	attacked by an enemy
 	use health potion aimlessly
 	use mana potion aimlessly
-pick weapon aimlessly
+	pick weapon aimlessly
 pick potion 100
 attack an enemy 10
 Kill an enemy 100

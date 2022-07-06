@@ -1,0 +1,34 @@
+featuresCNN1 = 32
+CNN1Shape = 3
+CNN1Step = 1
+featuresCNN2 = 32
+CNN2Shape = 5
+CNN2Step = 2
+# maxpooling
+featuresCNN3 = 16
+CNN3Shape = 10
+CNN3Step = 5
+denseLayerN = 256
+denseLayerNL_2 = 32
+denseLayerNL_3= 64
+denseLayerNL_21 = 128
+denseLayerNL_31 = 256 
+h_step = 8
+n_step = 4
+screenfactor = 1
+decay_steps = 10000
+seeded = False
+input = (148,148,3)
+record = False
+memory_size = n_step + h_step - 1
+batch_size = 12
+truncate = 100
+max_eps = 10000
+gamma = 0.99
+learning_rate = 5e-4 
+input1 = (1, 1, 148, 148, 3)
+input2 = (1,1,10)
+input3 = (1,1,125)
+
+algorithm = 'Train'
+save_dir = 'D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modeltensorflow_blog_A3C'

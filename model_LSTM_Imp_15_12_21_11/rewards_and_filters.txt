@@ -15,6 +15,7 @@ n_step = 4
 every time time an action which considered useless the reward is 0.
 This is an actual implemantation of n_step algorithm from sutton book page 231. I use adam optimizer no SGD
 move to new area reward 5
+
 negative useless movement:
 	move to already discovered area 
 	move towards wall area 

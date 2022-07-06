@@ -63,7 +63,7 @@ class GameMapGraphics():
 
     def enemyDepiction(self):
         '''Creates the image of the enemies.'''
-        if settings.exitx != []:
+        if settings.enemies != []:
             for enemy in settings.enemies:
                 if settings.tiles[enemy.enemyCurrentPossitionX][enemy.enemyCurrentPossitionY].visibility == GameEnum.VisibilityType.visible:
                     if isinstance(enemy, Giant_Rat):
@@ -97,7 +97,8 @@ class GameMapGraphics():
                     if isinstance(settings.tiles[x][y].store,Staff) or isinstance(settings.tiles[x][y].store,Sword):
                         pygame.draw.rect(self.screen, self.green, [x*self.tilesize,y*self.tilesize,self.itemFill,self.itemFill])
                     if isinstance(settings.tiles[x][y].store,Werdna_Ring):
-                        pygame.draw.rect(self.screen, self.green, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
+                        pygame.draw.rect(self.screen, self.pink, [x*self.tilesize,y*self.tilesize,self.tilefilsize,self.tilefilsize])
+
 
     def arrayreturn(self):
         array = pygame.surfarray.array3d(self.screen)

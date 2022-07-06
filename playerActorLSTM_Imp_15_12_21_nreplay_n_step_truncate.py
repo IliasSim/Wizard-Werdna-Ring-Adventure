@@ -30,7 +30,7 @@ denseLayerNL_2 = 32
 denseLayerNL_3= 64
 denseLayerNL_21 = 128
 denseLayerNL_31 = 256 
-h_step = 16
+h_step = 8
 n_step = 4
 screenfactor = 1
 decay_steps = 10000
@@ -341,28 +341,28 @@ class replay():
     
 
 # tf.random.set_seed(39999)
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\steps.txt'):
-    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\steps.txt','r')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\steps.txt'):
+    f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\steps.txt','r')
     total_steps = int(f.read())
     f.close()
 agentoo7 = agent()
 replay_memory = replay(memory_size)
-f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\episodes.txt','r')
+f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\episodes.txt','r')
 episodes_text = int(f.read())
 f.close()
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\ actor_model2.data-00000-of-00001'):
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\ actor_model2.data-00000-of-00001'):
     print("actor model is loaded")
     agentoo7.actor.built = True
-    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\ actor_model2')
-if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\ critic_model2.data-00000-of-00001'):
+    agentoo7.actor.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\ actor_model2')
+if exists('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\ critic_model2.data-00000-of-00001'):
     print("critic model is loaded")
     agentoo7.critic.built = True
-    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\ critic_model2')
+    agentoo7.critic.load_weights('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\ critic_model2')
 episode = 10000
 ep_reward = []
 total_avgr = []
 dfrewards = []
-game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded)
+game = GamePAI(1,'Connan',444,444,screenfactor,True,episodes_text,False,seeded,0)
 game_No = episodes_text
 for s in range(episodes_text,episode):
     game_No = game_No + 1
@@ -405,7 +405,7 @@ for s in range(episodes_text,episode):
         
 
         if done:
-            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
+            game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded,0)
 
         if steps%1000 == 0:
             print(steps,total_reward,action_name[action],game.cave)
@@ -414,10 +414,10 @@ for s in range(episodes_text,episode):
             if steps >= 500 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded,0)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded,0)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
@@ -425,16 +425,16 @@ for s in range(episodes_text,episode):
             if steps >= 5000 and game.cave < 2:
                 noVideo = True
                 if s% 100 == 0:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded,0)
                     noVideo = False
                 if noVideo:
-                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded)
+                    game.__init__(1,'Connan',444,444,screenfactor,True,game_No,False,seeded,0)
                 gc.collect()
                 print(s,total_reward,game.cave)
                 done = True
 
         if steps > n_step + h_step:
-            gamma = 0.9
+            gamma = 0.99
             train_states,train_playerstatus,train_gametexts,train_rewards,train_actions= agentoo7.preprocess1(replay_memory.replay_buffer[-(n_step + h_step -1):],gamma)
             if not done:
                 G = 0
@@ -463,15 +463,15 @@ for s in range(episodes_text,episode):
         if done: 
             total_steps = total_steps + steps
             if s%100 == 0 and s != episodes_text:
-                agentoo7.actor.save_weights('.\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\ actor_model2')
-                agentoo7.critic.save_weights('.\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\ critic_model2')
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\episodes.txt','w')
+                agentoo7.actor.save_weights('.\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\ actor_model2')
+                agentoo7.critic.save_weights('.\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\ critic_model2')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\episodes.txt','w')
                 f.write(str(episodes_text + 100))
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\episodes.txt','r')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\episodes.txt','r')
                 episodes_text = int(f.read())
                 f.close()
-                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_12_21_nreplay_trueonline_16_h_step\steps.txt','w')
+                f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\modelLSTM_Imp_15_1_12_nreplay_trueonline_DR\steps.txt','w')
                 f.write(str(total_steps))
                 f.close()
                 # f = open('D:\ekpa\diplomatiki\Wizard-Werdna-Ring-Adventure\playerActorLSTM_Imp_15_12_21\learning_rate.txt','w')

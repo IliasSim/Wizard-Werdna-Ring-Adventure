@@ -1,0 +1,30 @@
+featuresCNN1 = 32
+CNN1Shape = 3
+CNN1Step = 1
+featuresCNN2 = 32
+CNN2Shape = 5
+CNN2Step = 2
+featuresCNN3 = 16
+CNN3Shape = 10
+CNN3Step = 5
+denseLayerN = 256
+denseLayerNL_21 = 128
+denseLayerNL_31 = 256
+h_step = 4
+n_step = 4 
+positive rewards:
+	move to new area reward 20
+	pick potion 1000
+	attack an enemy 10
+	Kill an enemy 100
+	use rest 1
+	use health potion correctly 1000
+	use mana potion correctly 1000
+	enter new cave 10000
+	pick weapon 1000
+	win game 10000
+negative rewards:
+	move to wall -4
+	losse health -1
+gamma 0,9
+every step learn based on small history(n_step) approach is used.

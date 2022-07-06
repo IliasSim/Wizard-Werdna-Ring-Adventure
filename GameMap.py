@@ -101,16 +101,17 @@ class GameMap():
             r1 = random.random()
             # print(r1,1,self.seed + 3999 + caveNo + killno)
             if r1 <=0.25:
-                settings.tiles[x][y].store = self.weaponGenerator(player,killno)
+                settings.tiles[x][y].store = self.weaponGenerator(player,killno,x,y)
             else:
                 store = None
                 r2 = random.random()
                 # print(r2,2,self.seed + 3999 + caveNo + killno)
                 if r2 <= 0.5:
-                    store = HelthPotion()
+                    store = HelthPotion(x,y)
                 else:
-                    store = ManaPotion()
+                    store = ManaPotion(x,y)
                 settings.tiles[x][y].store = store
+
 
     def addItems(self,player,caveNo):
         '''Adds items at the creation of the map.'''
@@ -128,11 +129,11 @@ class GameMap():
         for i in range(items):
             if self.seeded:
                 random.seed(self.seed + caveNo*i + 4999)
-            if random.random() <= 0.5:
-                store = HelthPotion()
-            else:
-                store = ManaPotion()
             store_place = floorTile[random.randint(0,len(floorTile)-1)]
+            if random.random() <= 0.5:
+                store = HelthPotion(store_place[0],store_place[1])
+            else:
+                store = ManaPotion(store_place[0],store_place[1])
             settings.tiles[store_place[0]][store_place[1]].store = store
         if len(floorTile)/(settings.xtile*settings.ytile)<0.4:
             items = 1
@@ -143,10 +144,10 @@ class GameMap():
                 random.seed(self.seed + caveNo*i + 5999)
             store_place = floorTile[random.randint(0,len(floorTile)-1)]
             # self.weaponGenerator(player,caveNo)
-            settings.tiles[store_place[0]][store_place[1]].store = self.weaponGenerator(player,caveNo)
+            settings.tiles[store_place[0]][store_place[1]].store = self.weaponGenerator(player,caveNo,store_place[0],store_place[1])
             
 
-    def weaponGenerator(self,player,seedCH):
+    def weaponGenerator(self,player,seedCH,x,y):
         '''Generates weapon to be placed at the creation of the map or after the death of an enemy
 	    The item effect of the weapon depends on the player level.'''
         if self.seeded:
@@ -202,9 +203,9 @@ class GameMap():
         if namep > 2/3:
             adjective = "Ancient"
         if random.random() <= 0.5:
-            weapon = Sword(hpboostwar, strenghtboost, adjective + " Sword")
+            weapon = Sword(hpboostwar, strenghtboost, adjective + " Sword",x,y)
         else:
-            weapon = Staff(hpboostwiz, manaboost, intboost, adjective + " Staff")
+            weapon = Staff(hpboostwiz, manaboost, intboost, adjective + " Staff",x,y)
         return weapon
 
     def nearestEnemy(self,player):
@@ -294,6 +295,7 @@ class GameMap():
             dy = player.currentPositionY
             enpx = 0
             enpy = 0
+            enemy_position_rule = False
 
             if type == GameEnum.MovementType.left and self.enemy != None:
                 for x in reversed(range(settings.xtile)):
@@ -302,11 +304,16 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                            
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
+
                         
             if type == GameEnum.MovementType.right and self.enemy != None:
                 for x in range(settings.xtile):
@@ -315,11 +322,15 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                            
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                                
             if type == GameEnum.MovementType.up and self.enemy != None:
                 for y in reversed(range(settings.ytile)):
@@ -328,10 +339,15 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                          
             if type == GameEnum.MovementType.down and self.enemy != None:
                 for y in range(settings.ytile):
@@ -340,10 +356,15 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                         
 
     def createEnemiesRest(self,player,rest):
@@ -423,6 +444,7 @@ class GameMap():
             dy = player.currentPositionY
             enpx = 0
             enpy = 0
+            enemy_position_rule = False
             if case == 0 and self.enemy != None:
                 for x in reversed(range(settings.xtile)):
                     for y in range(settings.ytile):
@@ -430,10 +452,15 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                         
             if case == 1 and self.enemy != None:
                 for x in range(settings.xtile):
@@ -442,10 +469,15 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                                
             if case == 2 and self.enemy != None:
                 for y in reversed(range(settings.ytile)):
@@ -454,12 +486,16 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
+                            enemy_position_rule = True
                             
 
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                          
             if case == 3 and self.enemy != None:
                 for y in range(settings.ytile):
@@ -468,10 +504,15 @@ class GameMap():
                         if settings.tiles[x][y].ground == GameEnum.GroundType.floor and new_distance == settings.radius + self.enemy.visibility +1 and settings.tiles[x][y].occupancy !=True:
                             enpx = x 
                             enpy = y
-                self.enemy.enemyCurrentPossitionX = enpx
-                self.enemy.enemyCurrentPossitionY = enpy
-                settings.tiles[enpx][enpy].occupancy = True
-                player.playerHearing(self.enemy)
+                            enemy_position_rule = True
+
+                if enemy_position_rule:            
+                    self.enemy.enemyCurrentPossitionX = enpx
+                    self.enemy.enemyCurrentPossitionY = enpy
+                    settings.tiles[enpx][enpy].occupancy = True
+                    player.playerHearing(self.enemy)
+                if not enemy_position_rule:
+                    del settings.enemies[-1]
                         
 
 

@@ -51,7 +51,8 @@ class AbstractPlayer(ABC):
     
     def pickUP(self,item):
         '''pickUP adds item to the player inventory.'''
-        self.inventory.append(item)
+        if len(self.inventory) <= 30: # added as limit 5/22
+            self.inventory.append(item)
     
     @abstractmethod
     def use(self,item):
@@ -203,5 +204,6 @@ class AbstractPlayer(ABC):
         if enemy.enemyCurrentPossitionX < self.currentPositionX and enemy.enemyCurrentPossitionY < self.currentPositionY:
             text = self.name + ' can hear ' + enemy.name + ' from the north west.'
             settings.addGameText(text)
-            
+
+
         

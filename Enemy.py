@@ -14,6 +14,8 @@ class Enemy(ABC):
         self.name = None
         self.enemyCurrentPossitionX = 0
         self.enemyCurrentPossitionY = 0
+        self.seen = False
+        
 
     def enemyDistance(self,player):
         '''enemyDistance.Return the distance between player and enemy.
